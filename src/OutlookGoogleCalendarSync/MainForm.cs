@@ -541,16 +541,8 @@ namespace OutlookGoogleCalendarSync {
             GoogleCalendar.Instance.GetCalendarSettings();
             while (!syncOk) {
                 if (failedAttempts > 0) {
-
-                    if (Settings.Instance.EnableAutoRetry)
-                    {
-                        bSyncNow.Text = "Start Sync";
-                        NotificationTray.UpdateItem("sync", "&Sync Now");
-                        break;
-                    }
-
-                    if (MessageBox.Show("The synchronisation failed - check the Sync tab for further details.\r\nDo you want to try again?", "Sync Failed",
-                        MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == System.Windows.Forms.DialogResult.No) 
+                    if (CalMessageBox.Instance.ShowTrue("The synchronisation failed - check the Sync tab for further details.\r\nDo you want to try again?", "Sync Failed",
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation, System.Windows.Forms.DialogResult.No))
                         break;
                     else log.Info("User opted to retry sync straight away.");
                 }
@@ -710,19 +702,13 @@ namespace OutlookGoogleCalendarSync {
 
             } catch (DotNetOpenAuth.Messaging.ProtocolException ex) {
 
-                if (Settings.Instance.EnableAutoRetry)
-                    goto SkipIECheck;
-
                 Logboxout("ERROR: Unable to connect to the Google calendar.");
-                if (MessageBox.Show("Please ensure you can access the internet with Internet Explorer.\r\n" +
+                if (CalMessageBox.Instance.ShowFalse("Please ensure you can access the internet with Internet Explorer.\r\n" +
                     "Test it now? If successful, please retry synchronising your calendar.",
                     "Test Internet Access",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes) {
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes)) {
                     System.Diagnostics.Process.Start("iexplore.exe", "http://www.google.com");
                 }
-
-                SkipIECheck:
-
                 throw ex;
             } catch (System.Exception ex) {
                 Logboxout("ERROR: Unable to connect to the Google calendar.");
@@ -1989,16 +1975,8 @@ namespace OutlookGoogleCalendarSync {
                 case 1000: isMilestone = true; break;
             }
             if (isMilestone) {
-
-                if (Settings.Instance.EnableAutoRetry)
-                    goto SkipSpreadTheWord;
-
-                if (MessageBox.Show(blurb, "Spread the Word", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation) == System.Windows.Forms.DialogResult.OK)
+                if (CalMessageBox.Instance.ShowFalse(blurb, "Spread the Word", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation, System.Windows.Forms.DialogResult.OK))
                     tabApp.SelectedTab = tabPage_Social;
-
-                SkipSpreadTheWord:
-                log.Debug("Skipped spreading the word");
-
             }
         }
 

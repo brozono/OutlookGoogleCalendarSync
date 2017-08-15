@@ -213,6 +213,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ApiKeyring.cs" />
+    <Compile Include="CalMessageBox.cs" />
     <Compile Include="EmailAddress.cs" />
     <Compile Include="Exception.cs" />
     <Compile Include="TimezoneDB.cs" />

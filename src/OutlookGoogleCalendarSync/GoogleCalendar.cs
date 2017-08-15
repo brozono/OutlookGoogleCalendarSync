@@ -310,12 +310,7 @@ namespace OutlookGoogleCalendarSync {
                     } else {
                         MainForm.Instance.Logboxout("WARNING: Event creation failed.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
-
-                        if (Settings.Instance.EnableAutoRetry) {
-                            continue;
-                        }
-
-                        if (MessageBox.Show("Google event creation failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        if (CalMessageBox.Instance.ShowTrue("Google event creation failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                             continue;
                         else 
                             throw new UserCancelledSyncException("User chose not to continue sync.");
@@ -329,12 +324,7 @@ namespace OutlookGoogleCalendarSync {
                     if (!Settings.Instance.VerboseOutput) MainForm.Instance.Logboxout(OutlookCalendar.GetEventSummary(ai));
                     MainForm.Instance.Logboxout("WARNING: New event failed to save.\r\n" + ex.Message);
                     log.Error(ex.StackTrace);
-
-                    if (Settings.Instance.EnableAutoRetry) {
-                        continue;
-                    }
-
-                    if (MessageBox.Show("New Google event failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                    if (CalMessageBox.Instance.ShowTrue("New Google event failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                         continue;
                     else
                         throw new UserCancelledSyncException("User chose not to continue sync.");
@@ -501,12 +491,7 @@ namespace OutlookGoogleCalendarSync {
                     } else {
                         MainForm.Instance.Logboxout("WARNING: Event update failed.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
-
-                        if (Settings.Instance.EnableAutoRetry) {
-                            continue;
-                        }
-
-                        if (MessageBox.Show("Google event update failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        if (CalMessageBox.Instance.ShowTrue("Google event update failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                             continue;
                         else
                             throw new UserCancelledSyncException("User chose not to continue sync.");
@@ -522,12 +507,7 @@ namespace OutlookGoogleCalendarSync {
                         if (!Settings.Instance.VerboseOutput) MainForm.Instance.Logboxout(OutlookCalendar.GetEventSummary(compare.Key));
                         MainForm.Instance.Logboxout("WARNING: Updated event failed to save.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
-
-                        if (Settings.Instance.EnableAutoRetry) {
-                            continue;
-                        }
-
-                        if (MessageBox.Show("Updated Google event failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        if (CalMessageBox.Instance.ShowTrue("Updated Google event failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                             continue;
                         else
                             throw new UserCancelledSyncException("User chose not to continue sync.");
@@ -555,12 +535,7 @@ namespace OutlookGoogleCalendarSync {
                     } catch (System.Exception ex) {
                         MainForm.Instance.Logboxout("WARNING: Updated event failed to save.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
-
-                        if (Settings.Instance.EnableAutoRetry) {
-                            continue;
-                        }
-
-                        if (MessageBox.Show("Updated Google event failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        if (CalMessageBox.Instance.ShowTrue("Updated Google event failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                             continue;
                         else
                             throw new UserCancelledSyncException("User chose not to continue sync.");
@@ -851,12 +826,7 @@ namespace OutlookGoogleCalendarSync {
                     if (!Settings.Instance.VerboseOutput) MainForm.Instance.Logboxout(GoogleCalendar.GetEventSummary(ev));
                     MainForm.Instance.Logboxout("WARNING: Deleted event failed to remove.\r\n" + ex.Message);
                     log.Error(ex.StackTrace);
-
-                    if (Settings.Instance.EnableAutoRetry) {
-                        continue;
-                    }
-
-                    if (MessageBox.Show("Deleted Google event failed to remove. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                    if (CalMessageBox.Instance.ShowTrue("Deleted Google event failed to remove. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                         continue;
                     else {
                         throw new UserCancelledSyncException("User chose not to continue sync.");

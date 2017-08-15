@@ -272,12 +272,7 @@ namespace OutlookGoogleCalendarSync {
                         if (!Settings.Instance.VerboseOutput) MainForm.Instance.Logboxout(GoogleCalendar.GetEventSummary(ev));
                         MainForm.Instance.Logboxout("WARNING: Appointment creation failed.\r\n" + ex.Message);
                         if (ex.GetType() != typeof(System.ApplicationException)) log.Error(ex.StackTrace);
-
-                        if (Settings.Instance.EnableAutoRetry) {
-                            continue;
-                        }
-
-                        if (MessageBox.Show("Outlook appointment creation failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        if (CalMessageBox.Instance.ShowTrue("Outlook appointment creation failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                             continue;
                         else {
                             throw new UserCancelledSyncException("User chose not to continue sync.");
@@ -290,12 +285,7 @@ namespace OutlookGoogleCalendarSync {
                     } catch (System.Exception ex) {
                         MainForm.Instance.Logboxout("WARNING: New appointment failed to save.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
-
-                        if (Settings.Instance.EnableAutoRetry) {
-                            continue;
-                        }
-
-                        if (MessageBox.Show("New Outlook appointment failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        if (CalMessageBox.Instance.ShowTrue("New Outlook appointment failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                             continue;
                         else {
                             throw new UserCancelledSyncException("User chose not to continue sync.");
@@ -383,12 +373,7 @@ namespace OutlookGoogleCalendarSync {
                         if (!Settings.Instance.VerboseOutput) MainForm.Instance.Logboxout(GoogleCalendar.GetEventSummary(compare.Value));
                         MainForm.Instance.Logboxout("WARNING: Appointment update failed.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
-
-                        if (Settings.Instance.EnableAutoRetry) {
-                            continue;
-                        }
-
-                        if (MessageBox.Show("Outlook appointment update failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        if (CalMessageBox.Instance.ShowTrue("Outlook appointment update failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                             continue;
                         else {
                             throw new UserCancelledSyncException("User chose not to continue sync.");
@@ -402,12 +387,7 @@ namespace OutlookGoogleCalendarSync {
                         } catch (System.Exception ex) {
                             MainForm.Instance.Logboxout("WARNING: Updated appointment failed to save.\r\n" + ex.Message);
                             log.Error(ex.StackTrace);
-
-                            if (Settings.Instance.EnableAutoRetry) {
-                                continue;
-                            }
-
-                            if (MessageBox.Show("Updated Outlook appointment failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                            if (CalMessageBox.Instance.ShowTrue("Updated Outlook appointment failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                                 continue;
                             else {
                                 throw new UserCancelledSyncException("User chose not to continue sync.");
@@ -706,12 +686,7 @@ namespace OutlookGoogleCalendarSync {
                     } catch (System.Exception ex) {
                         MainForm.Instance.Logboxout("WARNING: Deleted appointment failed to remove.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
-
-                        if (Settings.Instance.EnableAutoRetry) {
-                            continue;
-                        }
-
-                        if (MessageBox.Show("Deleted Outlook appointment failed to remove. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        if (CalMessageBox.Instance.ShowTrue("Deleted Outlook appointment failed to remove. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                             continue;
                         else {
                             throw new UserCancelledSyncException("User chose not to continue sync.");
