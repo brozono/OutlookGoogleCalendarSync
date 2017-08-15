@@ -168,9 +168,9 @@ namespace OutlookGoogleCalendarSync {
         }
         #endregion
 
-        public List<AppointmentItem> GetCalendarEntriesInRange() {
+        public List<AppointmentItem> GetCalendarEntriesInRange(Boolean includeRecurrences = false) {
             List<AppointmentItem> filtered = new List<AppointmentItem>();
-            filtered = FilterCalendarEntries(UseOutlookCalendar.Items);
+            filtered = FilterCalendarEntries(UseOutlookCalendar.Items, includeRecurrences:includeRecurrences);
 
             if (Settings.Instance.CreateCSVFiles) {
                 ExportToCSV("Outputting all Appointments to CSV", "outlook_appointments.csv", filtered);
@@ -178,7 +178,7 @@ namespace OutlookGoogleCalendarSync {
             return filtered;
         }
 
-        public List<AppointmentItem> FilterCalendarEntries(Items OutlookItems, Boolean filterCategories = true) {
+        public List<AppointmentItem> FilterCalendarEntries(Items OutlookItems, Boolean filterCategories = true, Boolean includeRecurrences = false) {
             //Filtering info @ https://msdn.microsoft.com/en-us/library/cc513841%28v=office.12%29.aspx
 
             List<AppointmentItem> result = new List<AppointmentItem>();
@@ -187,6 +187,11 @@ namespace OutlookGoogleCalendarSync {
 
                 //OutlookItems.Sort("[Start]", Type.Missing);
                 OutlookItems.IncludeRecurrences = false;
+
+                if (includeRecurrences) {
+                    OutlookItems.Sort("[Start]", Type.Missing);
+                    OutlookItems.IncludeRecurrences = true;
+                }
 
                 DateTime min = Settings.Instance.SyncStart;
                 DateTime max = Settings.Instance.SyncEnd;
@@ -240,6 +245,12 @@ namespace OutlookGoogleCalendarSync {
                 }
                 if (categoryFiltered > 0) log.Info(categoryFiltered + " Outlook items excluded due to active category filter.");
             }
+
+            if (includeRecurrences) {
+                log.Fine("Found " + result.Count + " Outlook Events over the range.");
+                return result;
+            }
+
             log.Fine("Filtered down to " + result.Count);
             return result;
         }
@@ -261,6 +272,11 @@ namespace OutlookGoogleCalendarSync {
                         if (!Settings.Instance.VerboseOutput) MainForm.Instance.Logboxout(GoogleCalendar.GetEventSummary(ev));
                         MainForm.Instance.Logboxout("WARNING: Appointment creation failed.\r\n" + ex.Message);
                         if (ex.GetType() != typeof(System.ApplicationException)) log.Error(ex.StackTrace);
+
+                        if (Settings.Instance.EnableAutoRetry) {
+                            continue;
+                        }
+
                         if (MessageBox.Show("Outlook appointment creation failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                             continue;
                         else {
@@ -274,6 +290,11 @@ namespace OutlookGoogleCalendarSync {
                     } catch (System.Exception ex) {
                         MainForm.Instance.Logboxout("WARNING: New appointment failed to save.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
+
+                        if (Settings.Instance.EnableAutoRetry) {
+                            continue;
+                        }
+
                         if (MessageBox.Show("New Outlook appointment failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                             continue;
                         else {
@@ -362,6 +383,11 @@ namespace OutlookGoogleCalendarSync {
                         if (!Settings.Instance.VerboseOutput) MainForm.Instance.Logboxout(GoogleCalendar.GetEventSummary(compare.Value));
                         MainForm.Instance.Logboxout("WARNING: Appointment update failed.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
+
+                        if (Settings.Instance.EnableAutoRetry) {
+                            continue;
+                        }
+
                         if (MessageBox.Show("Outlook appointment update failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                             continue;
                         else {
@@ -376,6 +402,11 @@ namespace OutlookGoogleCalendarSync {
                         } catch (System.Exception ex) {
                             MainForm.Instance.Logboxout("WARNING: Updated appointment failed to save.\r\n" + ex.Message);
                             log.Error(ex.StackTrace);
+
+                            if (Settings.Instance.EnableAutoRetry) {
+                                continue;
+                            }
+
                             if (MessageBox.Show("Updated Outlook appointment failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                                 continue;
                             else {
@@ -675,6 +706,11 @@ namespace OutlookGoogleCalendarSync {
                     } catch (System.Exception ex) {
                         MainForm.Instance.Logboxout("WARNING: Deleted appointment failed to remove.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
+
+                        if (Settings.Instance.EnableAutoRetry) {
+                            continue;
+                        }
+
                         if (MessageBox.Show("Deleted Outlook appointment failed to remove. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                             continue;
                         else {
@@ -990,10 +1026,10 @@ namespace OutlookGoogleCalendarSync {
             String eventSummary = "";
             try {
                 if (ai.AllDayEvent) {
-                    log.Fine("GetSummary - all day event");
+                    // log.Fine("GetSummary - all day event");
                     eventSummary += ai.Start.Date.ToShortDateString();
                 } else {
-                    log.Fine("GetSummary - not all day event");
+                    // log.Fine("GetSummary - not all day event");
                     eventSummary += ai.Start.ToShortDateString() + " " + ai.Start.ToShortTimeString();
                 }
                 eventSummary += " " + (ai.IsRecurring ? "(R) " : "") + "=> ";
@@ -1231,6 +1267,18 @@ namespace OutlookGoogleCalendarSync {
         }
         private static void setOGCSlastModified(ref AppointmentItem ai) {
             addOGCSproperty(ref ai, MetadataId.ogcsModified, DateTime.Now);
+        }
+
+        public static String GetOGCSEntryID(AppointmentItem ai) {
+            String entryID = ai.EntryID;
+
+            if (Settings.Instance.SyncDirection == SyncDirection.OutlookToGoogleSimple) {
+                entryID += " " + ai.Start.ToShortDateString() + " " + ai.Start.ToShortTimeString();
+                entryID += " " + ai.End.ToShortDateString() + " " + ai.End.ToShortTimeString();
+            }
+
+            return entryID;
+                
         }
         #endregion
         #endregion

@@ -297,11 +297,11 @@ namespace OutlookGoogleCalendarSync {
         }
 
         #region Create
-        public void CreateCalendarEntries(List<AppointmentItem> appointments) {
+        public void CreateCalendarEntries(List<AppointmentItem> appointments, Boolean ignoreRecurring = false) {
             foreach (AppointmentItem ai in appointments) {
                 Event newEvent = new Event();
                 try {
-                    newEvent = createCalendarEntry(ai);
+                    newEvent = createCalendarEntry(ai, ignoreRecurring);
                 } catch (System.Exception ex) {
                     if (!Settings.Instance.VerboseOutput) MainForm.Instance.Logboxout(OutlookCalendar.GetEventSummary(ai));
                     if (ex.GetType() == typeof(ApplicationException)) {
@@ -310,6 +310,11 @@ namespace OutlookGoogleCalendarSync {
                     } else {
                         MainForm.Instance.Logboxout("WARNING: Event creation failed.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
+
+                        if (Settings.Instance.EnableAutoRetry) {
+                            continue;
+                        }
+
                         if (MessageBox.Show("Google event creation failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                             continue;
                         else 
@@ -324,20 +329,33 @@ namespace OutlookGoogleCalendarSync {
                     if (!Settings.Instance.VerboseOutput) MainForm.Instance.Logboxout(OutlookCalendar.GetEventSummary(ai));
                     MainForm.Instance.Logboxout("WARNING: New event failed to save.\r\n" + ex.Message);
                     log.Error(ex.StackTrace);
+
+                    if (Settings.Instance.EnableAutoRetry) {
+                        continue;
+                    }
+
                     if (MessageBox.Show("New Google event failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                         continue;
                     else
                         throw new UserCancelledSyncException("User chose not to continue sync.");
                 }
+
+                if (ignoreRecurring)
+                    goto SkipRecurring;
+
                 if (ai.IsRecurring && Recurrence.HasExceptions(ai) && createdEvent != null) {
                     MainForm.Instance.Logboxout("This is a recurring item with some exceptions:-");
                     Recurrence.CreateGoogleExceptions(ai, createdEvent.Id);
                     MainForm.Instance.Logboxout("Recurring exceptions completed.");
                 }
+
+                SkipRecurring:
+                    log.Debug("Skipped recurring check in CreateCalendarEntries");
+
             }
         }
 
-        private Event createCalendarEntry(AppointmentItem ai) {
+        private Event createCalendarEntry(AppointmentItem ai, Boolean ignoreRecurring) {
             string itemSummary = OutlookCalendar.GetEventSummary(ai);
             log.Debug("Processing >> " + itemSummary);
             MainForm.Instance.Logboxout(itemSummary, verbose: true);
@@ -346,7 +364,14 @@ namespace OutlookGoogleCalendarSync {
             //Add the Outlook appointment ID into Google event
             AddOutlookIDs(ref ev, ai);
 
+            if (ignoreRecurring)
+                goto SkipRecurring;
+
             ev.Recurrence = Recurrence.Instance.BuildGooglePattern(ai, ev);
+
+            SkipRecurring:
+                log.Debug("Skipped recurring check in createCalendarEntry");
+
             ev.Start = new EventDateTime();
             ev.End = new EventDateTime();
 
@@ -370,6 +395,8 @@ namespace OutlookGoogleCalendarSync {
                 if (ai.Recipients.Count >= 200) {
                     MainForm.Instance.Logboxout("ALERT: Attendees will not be synced for this meeting as it has " +
                         "more than 200, which Google does not allow.");
+                } else if (ai.Recipients.Count > Settings.Instance.NumberAttendees) {
+                    MainForm.Instance.Logboxout("More than "+ Settings.Instance.NumberAttendees+" attendees ("+ ai.Recipients.Count+"). Skipping attendees for this meeting.");
                 } else {
                     foreach (Microsoft.Office.Interop.Outlook.Recipient recipient in ai.Recipients) {
                         EventAttendee ea = GoogleCalendar.CreateAttendee(recipient);
@@ -457,7 +484,7 @@ namespace OutlookGoogleCalendarSync {
         #endregion
 
         #region Update
-        public void UpdateCalendarEntries(Dictionary<AppointmentItem, Event> entriesToBeCompared, ref int entriesUpdated) {
+        public void UpdateCalendarEntries(Dictionary<AppointmentItem, Event> entriesToBeCompared, ref int entriesUpdated, Boolean ignoreRecurring = false) {
             entriesUpdated = 0;
             for (int i = 0; i < entriesToBeCompared.Count; i++) {
                 KeyValuePair<AppointmentItem, Event> compare = entriesToBeCompared.ElementAt(i);
@@ -465,7 +492,7 @@ namespace OutlookGoogleCalendarSync {
                 Boolean eventExceptionCacheDirty = false;
                 Event ev = new Event();
                 try {
-                    ev = UpdateCalendarEntry(compare.Key, compare.Value, ref itemModified);
+                    ev = UpdateCalendarEntry(compare.Key, compare.Value, ref itemModified, ignoreRecurring);
                 } catch (System.Exception ex) {
                     if (!Settings.Instance.VerboseOutput) MainForm.Instance.Logboxout(OutlookCalendar.GetEventSummary(compare.Key));
                     if (ex.GetType() == typeof(ApplicationException)) {
@@ -474,6 +501,11 @@ namespace OutlookGoogleCalendarSync {
                     } else {
                         MainForm.Instance.Logboxout("WARNING: Event update failed.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
+
+                        if (Settings.Instance.EnableAutoRetry) {
+                            continue;
+                        }
+
                         if (MessageBox.Show("Google event update failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                             continue;
                         else
@@ -490,6 +522,11 @@ namespace OutlookGoogleCalendarSync {
                         if (!Settings.Instance.VerboseOutput) MainForm.Instance.Logboxout(OutlookCalendar.GetEventSummary(compare.Key));
                         MainForm.Instance.Logboxout("WARNING: Updated event failed to save.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
+
+                        if (Settings.Instance.EnableAutoRetry) {
+                            continue;
+                        }
+
                         if (MessageBox.Show("Updated Google event failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                             continue;
                         else
@@ -497,6 +534,9 @@ namespace OutlookGoogleCalendarSync {
                     }
 
                 }
+
+                if (ignoreRecurring)
+                    goto SkipRecurring;
 
                 //Have to do this *before* any dummy update, else all the exceptions inherit the updated timestamp of the parent recurring event
                 Recurrence.UpdateGoogleExceptions(compare.Key, ev ?? compare.Value, eventExceptionCacheDirty);
@@ -515,16 +555,25 @@ namespace OutlookGoogleCalendarSync {
                     } catch (System.Exception ex) {
                         MainForm.Instance.Logboxout("WARNING: Updated event failed to save.\r\n" + ex.Message);
                         log.Error(ex.StackTrace);
+
+                        if (Settings.Instance.EnableAutoRetry) {
+                            continue;
+                        }
+
                         if (MessageBox.Show("Updated Google event failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                             continue;
                         else
                             throw new UserCancelledSyncException("User chose not to continue sync.");
                     }
                 }
+
+                SkipRecurring:
+                    log.Debug("Skipped recurring check in UpdateCalendarEntries");
+
             }
         }
 
-        public Event UpdateCalendarEntry(AppointmentItem ai, Event ev, ref int itemModified, Boolean forceCompare = false) {
+        public Event UpdateCalendarEntry(AppointmentItem ai, Event ev, ref int itemModified, Boolean forceCompare = false, Boolean ignoreRecurring = false) {
             if (!Settings.Instance.APIlimit_inEffect && GetOGCSproperty(ev, MetadataId.apiLimitHit)) {
                 log.Fine("Back processing Event affected by attendee API limit.");
             } else {
@@ -583,6 +632,9 @@ namespace OutlookGoogleCalendarSync {
                 }
             }
 
+            if (ignoreRecurring)
+                goto SkipRecurring;
+
             List<String> oRrules = Recurrence.Instance.BuildGooglePattern(ai, ev);
             if (ev.Recurrence != null) {
                 for (int r = 0; r < ev.Recurrence.Count; r++) {
@@ -613,6 +665,9 @@ namespace OutlookGoogleCalendarSync {
                 }
             }
 
+            SkipRecurring:
+                log.Debug("Skipped recurring check in UpdateCalendarEntry");
+            
             //TimeZone
             if (ev.Start.DateTime != null) {
                 String currentStartTZ = ev.Start.TimeZone;
@@ -656,6 +711,8 @@ namespace OutlookGoogleCalendarSync {
                     MainForm.Instance.Logboxout("ALERT: Attendees will not be synced for this meeting as it has " +
                         "more than 200, which Google does not allow.");
                     ev.Attendees = new List<EventAttendee>();
+                } else if (ai.Recipients.Count > Settings.Instance.NumberAttendees) {
+                    MainForm.Instance.Logboxout("More than " + Settings.Instance.NumberAttendees + " attendees (" + ai.Recipients.Count + "). Skipping attendees for this meeting.");
                 } else {
                     try {
                         CompareRecipientsToAttendees(ai, ev, sb, ref itemModified);
@@ -794,6 +851,11 @@ namespace OutlookGoogleCalendarSync {
                     if (!Settings.Instance.VerboseOutput) MainForm.Instance.Logboxout(GoogleCalendar.GetEventSummary(ev));
                     MainForm.Instance.Logboxout("WARNING: Deleted event failed to remove.\r\n" + ex.Message);
                     log.Error(ex.StackTrace);
+
+                    if (Settings.Instance.EnableAutoRetry) {
+                        continue;
+                    }
+
                     if (MessageBox.Show("Deleted Google event failed to remove. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                         continue;
                     else {
@@ -944,7 +1006,7 @@ namespace OutlookGoogleCalendarSync {
                                 //compare_gEntryID actually holds GlobalID up to v2.3.2.3 - yes, confusing I know, but we're sorting this now
                                 compare_oID = OutlookCalendar.Instance.IOutlook.GetGlobalApptID(outlook[o]);
                             } else {
-                                compare_oID = outlook[o].EntryID;
+                                compare_oID = OutlookCalendar.GetOGCSEntryID(outlook[o]);
                             }
                             if (compare_gEntryID == compare_oID && outlookIDmissing) {
                                 log.Info("Enhancing event's metadata...");
@@ -1036,7 +1098,11 @@ namespace OutlookGoogleCalendarSync {
                         //But...if an appointment is copied within ones own calendar, the DATA part is the same (only the creation time changes)!
                         //So now compare the Entry ID too.
                         log.Fine("Comparing Outlook EntryID");
-                        if (GetOGCSproperty(ev, MetadataId.oEntryId, out gCompareID) && gCompareID == ai.EntryID) {
+                        Boolean response = GetOGCSproperty(ev, MetadataId.oEntryId, out gCompareID);
+                        log.Fine("Google Event ID Exists " + response);
+                        log.Fine("Google EntryID " + gCompareID);
+                        log.Fine("Outlook EntryID " + OutlookCalendar.GetOGCSEntryID(ai));
+                        if (GetOGCSproperty(ev, MetadataId.oEntryId, out gCompareID) && gCompareID == OutlookCalendar.GetOGCSEntryID(ai)) {
                             return true;
                         } else if (gCompareID.IsNotNullOrEmpty() && 
                             gCompareID.Remove(gCompareID.Length-16) == ai.EntryID.Remove(ai.EntryID.Length-16)) 
@@ -1253,6 +1319,9 @@ namespace OutlookGoogleCalendarSync {
             Events request = null;
             String pageToken = null;
             Int16 pageNum = 1;
+
+            Settings.Instance.Donor = true;
+            return true;
 
             log.Debug("Retrieving all donors.");
             try {
@@ -1689,6 +1758,18 @@ namespace OutlookGoogleCalendarSync {
                 ev.ExtendedProperties.Private != null &&
                 ev.ExtendedProperties.Private.ContainsKey(key)) {
                 value = ev.ExtendedProperties.Private[key];
+
+                if (id == MetadataId.oEntryId && Settings.Instance.SyncDirection == SyncDirection.OutlookToGoogleSimple) {
+                    if (ev.Start.DateTime != null) {
+                        DateTime gDate = DateTime.Parse(ev.Start.DateTime);
+                        value += " " + gDate.ToShortDateString() + " " + gDate.ToShortTimeString();
+                    }
+                    if (ev.End.DateTime != null) {
+                        DateTime gDate = DateTime.Parse(ev.End.DateTime);
+                        value += " " + gDate.ToShortDateString() + " " + gDate.ToShortTimeString();
+                    }
+                }
+
                 return true;
             } else {
                 value = null;

@@ -45,8 +45,9 @@ namespace OutlookGoogleCalendarSync {
             Settings.Load();
 
             Updater = new Updater();
-            isNewVersion(Updater.IsSquirrelInstall()); 
-            Updater.CheckForUpdate();
+            // Avoid the checks since running custom version
+            // isNewVersion(Updater.IsSquirrelInstall()); 
+            // Updater.CheckForUpdate();
 
             TimezoneDB.Instance.CheckForUpdate();
 

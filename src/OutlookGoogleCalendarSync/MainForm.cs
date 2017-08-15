@@ -253,8 +253,10 @@ namespace OutlookGoogleCalendarSync {
             syncDirection.Items.Add(SyncDirection.OutlookToGoogle);
             syncDirection.Items.Add(SyncDirection.GoogleToOutlook);
             syncDirection.Items.Add(SyncDirection.Bidirectional);
+            syncDirection.Items.Add(SyncDirection.OutlookToGoogleSimple);
             cbObfuscateDirection.Items.Add(SyncDirection.OutlookToGoogle);
             cbObfuscateDirection.Items.Add(SyncDirection.GoogleToOutlook);
+            cbObfuscateDirection.Items.Add(SyncDirection.OutlookToGoogleSimple);
             //Sync Direction dropdown
             for (int i = 0; i < syncDirection.Items.Count; i++) {
                 SyncDirection sd = (syncDirection.Items[i] as SyncDirection);
@@ -311,6 +313,7 @@ namespace OutlookGoogleCalendarSync {
             cbAddDescription.Checked = Settings.Instance.AddDescription;
             cbAddDescription_OnlyToGoogle.Checked = Settings.Instance.AddDescription_OnlyToGoogle;
             cbAddAttendees.Checked = Settings.Instance.AddAttendees;
+            tbNumberAttendees.Value = Settings.Instance.NumberAttendees;
             cbAddReminders.Checked = Settings.Instance.AddReminders;
             cbUseGoogleDefaultReminder.Checked = Settings.Instance.UseGoogleDefaultReminder;
             cbUseGoogleDefaultReminder.Enabled = Settings.Instance.AddReminders;
@@ -343,6 +346,10 @@ namespace OutlookGoogleCalendarSync {
                 }
             }
             updateGUIsettings_Proxy();
+            #endregion
+            #region Dev Options
+            cbEnableAutoRetry.Checked = Settings.Instance.EnableAutoRetry;
+            tbAutoRetryDelay.Value = Settings.Instance.AutoRetryDelayMin;
             #endregion
             #region About
             int r = 0;
@@ -534,6 +541,14 @@ namespace OutlookGoogleCalendarSync {
             GoogleCalendar.Instance.GetCalendarSettings();
             while (!syncOk) {
                 if (failedAttempts > 0) {
+
+                    if (Settings.Instance.EnableAutoRetry)
+                    {
+                        bSyncNow.Text = "Start Sync";
+                        NotificationTray.UpdateItem("sync", "&Sync Now");
+                        break;
+                    }
+
                     if (MessageBox.Show("The synchronisation failed - check the Sync tab for further details.\r\nDo you want to try again?", "Sync Failed",
                         MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == System.Windows.Forms.DialogResult.No) 
                         break;
@@ -597,10 +612,21 @@ namespace OutlookGoogleCalendarSync {
                     OgcsTimer.LastSyncDate = SyncStarted;
                     OgcsTimer.SetNextSync();
                 } else {
+
+                    if (Settings.Instance.AutoRetryDelayMin != 0) {
+                        Logboxout("Another sync has been scheduled to automatically run in " + Settings.Instance.AutoRetryDelayMin + " minutes time.");
+                        OgcsTimer.SetNextSync(Settings.Instance.AutoRetryDelayMin, fromNow: true);
+                        goto SkipSettingFor5Minutes;
+                    }
+
                     if (Settings.Instance.SyncInterval != 0) {
                         Logboxout("Another sync has been scheduled to automatically run in 5 minutes time.");
                         OgcsTimer.SetNextSync(5, fromNow: true);
                     }
+
+                    SkipSettingFor5Minutes:
+                        log.Debug("Skipped the 5 minute reschedule");
+
                 }
             }
             bSyncNow.Enabled = true;
@@ -636,21 +662,57 @@ namespace OutlookGoogleCalendarSync {
             Logboxout("Reading Outlook Calendar Entries...");
             List<AppointmentItem> outlookEntries = null;
             try {
+
+                if (Settings.Instance.SyncDirection == SyncDirection.OutlookToGoogleSimple) {
+                    outlookEntries = OutlookCalendar.Instance.GetCalendarEntriesInRange(includeRecurrences: true);
+                    goto SkipGettingOutlookEntries;
+                }
+                
                 outlookEntries = OutlookCalendar.Instance.GetCalendarEntriesInRange();
+
+                SkipGettingOutlookEntries:
+                    log.Debug("Got all Outlook entries in range including recurring entries");
+
             } catch (System.Exception ex) {
                 Logboxout("Unable to access the Outlook calendar.");
                 throw ex;
             }
             Logboxout(outlookEntries.Count + " Outlook calendar entries found.");
             Logboxout("--------------------------------------------------");
+
+            log.Debug(outlookEntries.Count + " Outlook calendar entries found.");
+            for (int i = outlookEntries.Count - 1; i >= 0; i--) {
+                log.Debug("Found " + i + "/" + outlookEntries.Count + ": " + OutlookCalendar.GetEventSummary(outlookEntries[i]));
+            }
+
             #endregion
 
             #region Read Google items
             Logboxout("Reading Google Calendar Entries...");
             List<Event> googleEntries = null;
             try {
+
+                if (Settings.Instance.SyncDirection == SyncDirection.OutlookToGoogleSimple) {
+                    googleEntries = GoogleCalendar.Instance.GetCalendarEntriesInRange(Settings.Instance.SyncStart.AddMonths(-36),
+                                                                                  Settings.Instance.SyncEnd.AddMonths(36));
+                    for (int i = googleEntries.Count - 1; i >= 0; i--)
+                    {
+                        if (googleEntries[i].Status == "cancelled")
+                            googleEntries.RemoveAt(i);
+                    }
+                    goto SkipGettingGoogleEntries;
+                }
+                    
                 googleEntries = GoogleCalendar.Instance.GetCalendarEntriesInRange();
+
+                SkipGettingGoogleEntries:
+                    log.Debug("Got +/-3 year range of Google entries");
+
             } catch (DotNetOpenAuth.Messaging.ProtocolException ex) {
+
+                if (Settings.Instance.EnableAutoRetry)
+                    goto SkipIECheck;
+
                 Logboxout("ERROR: Unable to connect to the Google calendar.");
                 if (MessageBox.Show("Please ensure you can access the internet with Internet Explorer.\r\n" +
                     "Test it now? If successful, please retry synchronising your calendar.",
@@ -658,17 +720,29 @@ namespace OutlookGoogleCalendarSync {
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes) {
                     System.Diagnostics.Process.Start("iexplore.exe", "http://www.google.com");
                 }
+
+                SkipIECheck:
+
                 throw ex;
             } catch (System.Exception ex) {
                 Logboxout("ERROR: Unable to connect to the Google calendar.");
                 throw ex;
             }
             Logboxout(googleEntries.Count + " Google calendar entries found.");
+
+            log.Debug(googleEntries.Count + " Google calendar entries found.");
+            for (int i = googleEntries.Count - 1; i >= 0; i--) {
+                log.Debug("Found " + i + "/" + googleEntries.Count + ": " + GoogleCalendar.GetEventSummary(googleEntries[i]));
+            }
+
             Recurrence.Instance.SeparateGoogleExceptions(googleEntries);
             if (Recurrence.Instance.GoogleExceptions != null && Recurrence.Instance.GoogleExceptions.Count > 0)
                 Logboxout(Recurrence.Instance.GoogleExceptions.Count + " are exceptions to recurring events.");
             Logboxout("--------------------------------------------------");
             #endregion
+
+            if (Settings.Instance.SyncDirection == SyncDirection.OutlookToGoogleSimple)
+                goto SkipNormalizeItemsInSyncWindow;            
 
             #region Normalise recurring items in sync window
             Logboxout("Total inc. recurring items spanning sync date range...");
@@ -764,16 +838,26 @@ namespace OutlookGoogleCalendarSync {
             Logboxout("--------------------------------------------------");
             #endregion
 
+        SkipNormalizeItemsInSyncWindow:
+            log.Debug("Skipped Normalizing recurring items in sync window for Outlook -> Google : Simple sync");
+
             Boolean success = true;
             String bubbleText = "";
             if (Settings.Instance.SyncDirection != SyncDirection.GoogleToOutlook) {
                 success = sync_outlookToGoogle(outlookEntries, googleEntries, ref bubbleText);
             }
             if (!success) return false;
+
+            if (Settings.Instance.SyncDirection == SyncDirection.OutlookToGoogleSimple)
+                goto SkipGoogleToOutlookSync;
+
             if (Settings.Instance.SyncDirection != SyncDirection.OutlookToGoogle) {
                 if (bubbleText != "") bubbleText += "\r\n";
                 success = sync_googleToOutlook(googleEntries, outlookEntries, ref bubbleText);
             }
+
+            SkipGoogleToOutlookSync:
+
             if (bubbleText != "") NotificationTray.ShowBubbleInfo(bubbleText);
 
             for (int o = outlookEntries.Count() - 1; o >= 0; o--) {
@@ -842,7 +926,17 @@ namespace OutlookGoogleCalendarSync {
                     Logboxout("--------------------------------------------------");
                     Logboxout("Creating " + googleEntriesToBeCreated.Count + " Google calendar entries...");
                     try {
+
+                        if (Settings.Instance.SyncDirection == SyncDirection.OutlookToGoogleSimple) {
+                            GoogleCalendar.Instance.CreateCalendarEntries(googleEntriesToBeCreated, ignoreRecurring: true);
+                            goto ignoreRecurringOnCreate;
+                        }
+
                         GoogleCalendar.Instance.CreateCalendarEntries(googleEntriesToBeCreated);
+
+                        ignoreRecurringOnCreate:
+                            log.Debug("Ignored creating recurring event details for Outlook -> Google : Simple sync");
+
                     } catch (UserCancelledSyncException ex) {
                         log.Info(ex.Message);
                         return false;
@@ -859,7 +953,17 @@ namespace OutlookGoogleCalendarSync {
                     Logboxout("--------------------------------------------------");
                     Logboxout("Comparing " + entriesToBeCompared.Count + " existing Google calendar entries...");
                     try {
+
+                        if (Settings.Instance.SyncDirection == SyncDirection.OutlookToGoogleSimple) {
+                            GoogleCalendar.Instance.UpdateCalendarEntries(entriesToBeCompared, ref entriesUpdated, ignoreRecurring: true);
+                            goto ignoreRecurringOnUpdate;
+                        }
+                        
                         GoogleCalendar.Instance.UpdateCalendarEntries(entriesToBeCompared, ref entriesUpdated);
+
+                        ignoreRecurringOnUpdate:
+                            log.Debug("Ignored updating recurring event details for Outlook -> Google : Simple sync");
+
                     } catch (UserCancelledSyncException ex) {
                         log.Info(ex.Message);
                         return false;
@@ -1681,6 +1785,11 @@ namespace OutlookGoogleCalendarSync {
 
         private void cbAddAttendees_CheckedChanged(object sender, EventArgs e) {
             Settings.Instance.AddAttendees = cbAddAttendees.Checked;
+            this.tbNumberAttendees.Enabled = cbAddAttendees.Checked;
+        }
+        private void tbNumberAttendees_ValueChanged(object sender, EventArgs e)
+        {
+            Settings.Instance.NumberAttendees = (int)tbNumberAttendees.Value;
         }
         #endregion
         #endregion
@@ -1772,6 +1881,18 @@ namespace OutlookGoogleCalendarSync {
             applyProxy();
         }
         #endregion
+        #endregion
+
+        #region Dev Options
+        private void cbEnableAutoRetry_CheckedChanged(object sender, EventArgs e)
+        {
+            Settings.Instance.EnableAutoRetry = cbEnableAutoRetry.Checked;
+            this.tbAutoRetryDelay.Enabled = cbEnableAutoRetry.Checked;
+        }
+        private void tbAutoRetryDelay_ValueChanged(object sender, EventArgs e)
+        {
+            Settings.Instance.AutoRetryDelayMin = (int)tbAutoRetryDelay.Value;
+        }
         #endregion
 
         #region Help
@@ -1868,8 +1989,16 @@ namespace OutlookGoogleCalendarSync {
                 case 1000: isMilestone = true; break;
             }
             if (isMilestone) {
+
+                if (Settings.Instance.EnableAutoRetry)
+                    goto SkipSpreadTheWord;
+
                 if (MessageBox.Show(blurb, "Spread the Word", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation) == System.Windows.Forms.DialogResult.OK)
                     tabApp.SelectedTab = tabPage_Social;
+
+                SkipSpreadTheWord:
+                log.Debug("Skipped spreading the word");
+
             }
         }
 

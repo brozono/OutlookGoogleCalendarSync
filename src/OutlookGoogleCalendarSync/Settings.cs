@@ -75,6 +75,8 @@ namespace OutlookGoogleCalendarSync {
             PrivateCalendar = SyncDirection.OutlookToGoogle;
             Obfuscation = new Obfuscate();
 
+            NumberAttendees = 200;
+
             ShowBubbleTooltipWhenSyncing = true;
             StartOnStartup = false;
             StartupDelay = 0;
@@ -90,8 +92,11 @@ namespace OutlookGoogleCalendarSync {
 
             alphaReleases = false;
             Subscribed = DateTime.Parse("01-Jan-2000");
-            donor = false;
-            hideSplashScreen = false;
+            donor = true;
+            hideSplashScreen = true;
+
+            EnableAutoRetry = false;
+            AutoRetryDelayMin = 1;
             
             lastSyncDate = new DateTime(0);
             completedSyncs = 0;
@@ -183,6 +188,7 @@ namespace OutlookGoogleCalendarSync {
         [DataMember] public SyncDirection SyncDirection { get; set; }
         [DataMember] public int DaysInThePast { get; set; }
         [DataMember] public int DaysInTheFuture { get; set; }
+        [DataMember] public int NumberAttendees { get; set; }
         [DataMember] public int SyncInterval { get; set; }
         [DataMember] public String SyncIntervalUnit { get; set; }
         [DataMember] public bool OutlookPush { get; set; }
@@ -234,6 +240,10 @@ namespace OutlookGoogleCalendarSync {
         [DataMember] public String LoggingLevel { get; set; }
         //Proxy
         [DataMember] public SettingsProxy Proxy { get; set; }
+        #endregion
+        #region Dev Options
+        [DataMember] public bool EnableAutoRetry { get; set; }
+        [DataMember] public int AutoRetryDelayMin { get; set; }
         #endregion
         #region About
         [DataMember] public string Version {
@@ -350,6 +360,7 @@ namespace OutlookGoogleCalendarSync {
             log.Info("    UseGoogleDefaultReminder: " + UseGoogleDefaultReminder);
             log.Info("    ReminderDND: " + ReminderDND + " (" + ReminderDNDstart.ToString("HH:mm") + "-" + ReminderDNDend.ToString("HH:mm") + ")");
             log.Info("  AddAttendees: " + AddAttendees);
+            log.Info("    MaxNumberOfAttendees: " + NumberAttendees);
             log.Info("  MergeItems: " + MergeItems);
             log.Info("  DisableDelete: " + DisableDelete);
             log.Info("  ConfirmOnDelete: " + ConfirmOnDelete);
@@ -391,6 +402,10 @@ namespace OutlookGoogleCalendarSync {
             //To pick up from settings.xml file:
             //((log4net.Repository.Hierarchy.Hierarchy)log.Logger.Repository).Root.Level.Name);
             log.Info("  Logging Level: "+ LoggingLevel);
+
+            log.Info("DEVELOPER OPTIONS:-");
+            log.Info("  Enable Retry: " + EnableAutoRetry);
+            log.Info("  Auto Retry Delay (min): " + AutoRetryDelayMin);
 
             log.Info("ABOUT:-");
             log.Info("  Alpha Releases: " + alphaReleases);

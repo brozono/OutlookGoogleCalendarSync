@@ -130,6 +130,8 @@
             this.cbAddDescription = new System.Windows.Forms.CheckBox();
             this.cbReminderDND = new System.Windows.Forms.CheckBox();
             this.cbUseGoogleDefaultReminder = new System.Windows.Forms.CheckBox();
+            this.tbNumberAttendees = new System.Windows.Forms.NumericUpDown();
+            this.lNumberAttendees = new System.Windows.Forms.Label();
             this.label15 = new System.Windows.Forms.Label();
             this.tabAppBehaviour = new System.Windows.Forms.TabPage();
             this.tbStartupDelay = new System.Windows.Forms.NumericUpDown();
@@ -158,6 +160,11 @@
             this.cbStartInTray = new System.Windows.Forms.CheckBox();
             this.cbCreateFiles = new System.Windows.Forms.CheckBox();
             this.cbStartOnStartup = new System.Windows.Forms.CheckBox();
+            this.tabDevOptions = new System.Windows.Forms.TabPage();
+            this.gbAutoRetryErrors = new System.Windows.Forms.GroupBox();
+            this.lRetryDelay = new System.Windows.Forms.Label();
+            this.tbAutoRetryDelay = new System.Windows.Forms.NumericUpDown();
+            this.cbEnableAutoRetry = new System.Windows.Forms.CheckBox();
             this.bSave = new System.Windows.Forms.Button();
             this.tabPage_Help = new System.Windows.Forms.TabPage();
             this.tbTS2 = new System.Windows.Forms.TextBox();
@@ -226,9 +233,13 @@
             ((System.ComponentModel.ISupportInitialize)(this.tbDaysInThePast)).BeginInit();
             this.WhatPostit.SuspendLayout();
             this.gbSyncOptions_What.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).BeginInit();
             this.tabAppBehaviour.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbStartupDelay)).BeginInit();
             this.gbProxy.SuspendLayout();
+            this.tabDevOptions.SuspendLayout();
+            this.gbAutoRetryErrors.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tbAutoRetryDelay)).BeginInit();
             this.tabPage_Help.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.tabPage_About.SuspendLayout();
@@ -411,6 +422,7 @@
             this.tabAppSettings.Controls.Add(this.tabGoogle);
             this.tabAppSettings.Controls.Add(this.tabSyncOptions);
             this.tabAppSettings.Controls.Add(this.tabAppBehaviour);
+            this.tabAppSettings.Controls.Add(this.tabDevOptions);
             this.tabAppSettings.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
             this.tabAppSettings.ItemSize = new System.Drawing.Size(35, 75);
             this.tabAppSettings.Location = new System.Drawing.Point(6, 7);
@@ -1372,6 +1384,8 @@
             this.gbSyncOptions_What.Controls.Add(this.cbAddDescription);
             this.gbSyncOptions_What.Controls.Add(this.cbReminderDND);
             this.gbSyncOptions_What.Controls.Add(this.cbUseGoogleDefaultReminder);
+            this.gbSyncOptions_What.Controls.Add(this.tbNumberAttendees);
+            this.gbSyncOptions_What.Controls.Add(this.lNumberAttendees);
             this.gbSyncOptions_What.Font = new System.Drawing.Font("Arial Black", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.gbSyncOptions_What.ForeColor = System.Drawing.SystemColors.MenuHighlight;
             this.gbSyncOptions_What.Location = new System.Drawing.Point(12, 273);
@@ -1501,6 +1515,38 @@
             this.cbUseGoogleDefaultReminder.Text = "Use Google default";
             this.cbUseGoogleDefaultReminder.UseVisualStyleBackColor = true;
             this.cbUseGoogleDefaultReminder.CheckedChanged += new System.EventHandler(this.cbUseGoogleDefaultReminder_CheckedChanged);
+            // 
+            // tbNumberAttendees
+            // 
+            this.tbNumberAttendees.Enabled = this.cbAddAttendees.Checked;
+            this.tbNumberAttendees.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbNumberAttendees.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.tbNumberAttendees.Location = new System.Drawing.Point(127, 54);
+            this.tbNumberAttendees.Maximum = new decimal(new int[] {
+            365,
+            0,
+            0,
+            0});
+            this.tbNumberAttendees.Name = "tbNumberAttendees";
+            this.tbNumberAttendees.Size = new System.Drawing.Size(40, 20);
+            this.tbNumberAttendees.TabIndex = 36;
+            this.tbNumberAttendees.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.tbNumberAttendees.Value = new decimal(new int[] {
+            99,
+            0,
+            0,
+            0});
+            this.tbNumberAttendees.ValueChanged += new System.EventHandler(this.tbNumberAttendees_ValueChanged);
+            // 
+            // lNumberAttendees
+            // 
+            this.lNumberAttendees.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lNumberAttendees.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.lNumberAttendees.Location = new System.Drawing.Point(167, 58);
+            this.lNumberAttendees.Name = "lNumberAttendees";
+            this.lNumberAttendees.Size = new System.Drawing.Size(140, 14);
+            this.lNumberAttendees.TabIndex = 37;
+            this.lNumberAttendees.Text = "Max number of attendees";
             // 
             // label15
             // 
@@ -1870,6 +1916,79 @@
             this.cbStartOnStartup.Text = "Start on login, with delay of                 seconds";
             this.cbStartOnStartup.UseVisualStyleBackColor = true;
             this.cbStartOnStartup.CheckedChanged += new System.EventHandler(this.cbStartOnStartup_CheckedChanged);
+            // 
+            // tabDevOptions
+            // 
+            this.tabDevOptions.BackColor = System.Drawing.Color.White;
+            this.tabDevOptions.Controls.Add(this.gbAutoRetryErrors);
+            this.tabDevOptions.Location = new System.Drawing.Point(79, 4);
+            this.tabDevOptions.Name = "tabDevOptions";
+            this.tabDevOptions.Padding = new System.Windows.Forms.Padding(3);
+            this.tabDevOptions.Size = new System.Drawing.Size(392, 462);
+            this.tabDevOptions.TabIndex = 4;
+            this.tabDevOptions.Text = "Developer Options";
+            // 
+            // gbAutoRetryErrors
+            // 
+            this.gbAutoRetryErrors.Controls.Add(this.lRetryDelay);
+            this.gbAutoRetryErrors.Controls.Add(this.tbAutoRetryDelay);
+            this.gbAutoRetryErrors.Controls.Add(this.cbEnableAutoRetry);
+            this.gbAutoRetryErrors.Font = new System.Drawing.Font("Arial Black", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.gbAutoRetryErrors.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.gbAutoRetryErrors.Location = new System.Drawing.Point(12, 11);
+            this.gbAutoRetryErrors.Name = "gbAutoRetryErrors";
+            this.gbAutoRetryErrors.Size = new System.Drawing.Size(369, 83);
+            this.gbAutoRetryErrors.TabIndex = 2;
+            this.gbAutoRetryErrors.TabStop = false;
+            this.gbAutoRetryErrors.Text = "Auto Retry on Errors";
+            // 
+            // lRetryDelay
+            // 
+            this.lRetryDelay.AutoSize = true;
+            this.lRetryDelay.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lRetryDelay.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.lRetryDelay.Location = new System.Drawing.Point(83, 50);
+            this.lRetryDelay.Name = "lRetryDelay";
+            this.lRetryDelay.Size = new System.Drawing.Size(87, 13);
+            this.lRetryDelay.TabIndex = 2;
+            this.lRetryDelay.Text = "Retry Delay (min)";
+            // 
+            // tbAutoRetryDelay
+            // 
+            this.tbAutoRetryDelay.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbAutoRetryDelay.Location = new System.Drawing.Point(18, 44);
+            this.tbAutoRetryDelay.Maximum = new decimal(new int[] {
+            60,
+            0,
+            0,
+            0});
+            this.tbAutoRetryDelay.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.tbAutoRetryDelay.Name = "tbAutoRetryDelay";
+            this.tbAutoRetryDelay.Size = new System.Drawing.Size(58, 20);
+            this.tbAutoRetryDelay.TabIndex = 1;
+            this.tbAutoRetryDelay.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.tbAutoRetryDelay.ValueChanged += new System.EventHandler(this.tbAutoRetryDelay_ValueChanged);
+            // 
+            // cbEnableAutoRetry
+            // 
+            this.cbEnableAutoRetry.AutoSize = true;
+            this.cbEnableAutoRetry.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cbEnableAutoRetry.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.cbEnableAutoRetry.Location = new System.Drawing.Point(18, 21);
+            this.cbEnableAutoRetry.Name = "cbEnableAutoRetry";
+            this.cbEnableAutoRetry.Size = new System.Drawing.Size(112, 17);
+            this.cbEnableAutoRetry.TabIndex = 0;
+            this.cbEnableAutoRetry.Text = "Enable Auto Retry";
+            this.cbEnableAutoRetry.UseVisualStyleBackColor = true;
+            this.cbEnableAutoRetry.CheckedChanged += new System.EventHandler(this.cbEnableAutoRetry_CheckedChanged);
             // 
             // bSave
             // 
@@ -2550,11 +2669,16 @@
             this.WhatPostit.ResumeLayout(false);
             this.gbSyncOptions_What.ResumeLayout(false);
             this.gbSyncOptions_What.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).EndInit();
             this.tabAppBehaviour.ResumeLayout(false);
             this.tabAppBehaviour.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbStartupDelay)).EndInit();
             this.gbProxy.ResumeLayout(false);
             this.gbProxy.PerformLayout();
+            this.tabDevOptions.ResumeLayout(false);
+            this.gbAutoRetryErrors.ResumeLayout(false);
+            this.gbAutoRetryErrors.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tbAutoRetryDelay)).EndInit();
             this.tabPage_Help.ResumeLayout(false);
             this.tabPage_Help.PerformLayout();
             this.tableLayoutPanel1.ResumeLayout(false);
@@ -2675,6 +2799,8 @@
         private System.Windows.Forms.CheckBox cbAddReminders;
         private System.Windows.Forms.Label lAttributes;
         private System.Windows.Forms.CheckBox cbAddAttendees;
+        private System.Windows.Forms.NumericUpDown tbNumberAttendees;
+        private System.Windows.Forms.Label lNumberAttendees;
         private System.Windows.Forms.CheckBox cbAddDescription;
         private System.Windows.Forms.GroupBox gbSyncOptions_How;
         private System.Windows.Forms.CheckBox cbOfuscate;
@@ -2745,5 +2871,10 @@
         private System.Windows.Forms.CheckBox cbPrivate;
         private System.Windows.Forms.CheckBox btHowMore;
         private System.Windows.Forms.NumericUpDown tbStartupDelay;
+        private System.Windows.Forms.TabPage tabDevOptions;
+        private System.Windows.Forms.GroupBox gbAutoRetryErrors;
+        private System.Windows.Forms.CheckBox cbEnableAutoRetry;
+        private System.Windows.Forms.Label lRetryDelay;
+        private System.Windows.Forms.NumericUpDown tbAutoRetryDelay;
     }
 }
