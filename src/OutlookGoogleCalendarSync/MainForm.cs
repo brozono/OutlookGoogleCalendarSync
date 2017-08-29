@@ -720,6 +720,9 @@ namespace OutlookGoogleCalendarSync {
                     
                 googleEntries = GoogleCalendar.Instance.GetCalendarEntriesInRange();
 
+                SkipGettingGoogleEntries:
+                    log.Debug("Got +/-3 year range of Google entries");
+
             } catch (AggregateException agex) {
                 OGCSexception.AnalyseAggregate(agex);
             } catch (Google.Apis.Auth.OAuth2.Responses.TokenResponseException ex) {
