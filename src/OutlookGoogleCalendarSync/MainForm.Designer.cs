@@ -10,7 +10,13 @@
         /// </summary>
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing) {
-            if (Settings.Instance.MinimiseNotClose && !MainForm.Instance.NotificationTray.Exited &&
+            System.Boolean notificationTrayExited = false;
+            try {
+                notificationTrayExited = MainForm.Instance.NotificationTray.Exited;
+            } catch {
+                notificationTrayExited = true;
+            }
+            if (Settings.Instance.MinimiseNotClose && !notificationTrayExited &&
                 this.WindowState != System.Windows.Forms.FormWindowState.Minimized) {
                 this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             } else {
@@ -30,9 +36,9 @@
         /// </summary>
         private void InitializeComponent() {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
             this.tabApp = new System.Windows.Forms.TabControl();
             this.tabPage_Sync = new System.Windows.Forms.TabPage();
@@ -213,6 +219,8 @@
             this.pbSocialTwitterFollow = new System.Windows.Forms.PictureBox();
             this.label2 = new System.Windows.Forms.Label();
             this.trayIcon = new System.Windows.Forms.NotifyIcon(this.components);
+            this.cbCloakEmail = new System.Windows.Forms.CheckBox();
+            this.lWhatInfo = new System.Windows.Forms.Label();
             this.tabApp.SuspendLayout();
             this.tabPage_Sync.SuspendLayout();
             this.tabPage_Settings.SuspendLayout();
@@ -757,7 +765,7 @@
             this.gbDeveloperOptions.Controls.Add(this.lSecret);
             this.gbDeveloperOptions.Location = new System.Drawing.Point(14, 208);
             this.gbDeveloperOptions.Name = "gbDeveloperOptions";
-            this.gbDeveloperOptions.Size = new System.Drawing.Size(364, 151);
+            this.gbDeveloperOptions.Size = new System.Drawing.Size(364, 171);
             this.gbDeveloperOptions.TabIndex = 31;
             this.gbDeveloperOptions.TabStop = false;
             this.gbDeveloperOptions.Text = "Google OAuth API";
@@ -767,7 +775,7 @@
             // 
             this.llAPIConsole.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.llAPIConsole.AutoSize = true;
-            this.llAPIConsole.Location = new System.Drawing.Point(44, 64);
+            this.llAPIConsole.Location = new System.Drawing.Point(44, 89);
             this.llAPIConsole.Name = "llAPIConsole";
             this.llAPIConsole.Size = new System.Drawing.Size(273, 13);
             this.llAPIConsole.TabIndex = 5;
@@ -781,7 +789,7 @@
             this.cbShowClientSecret.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.cbShowClientSecret.AutoSize = true;
             this.cbShowClientSecret.Enabled = false;
-            this.cbShowClientSecret.Location = new System.Drawing.Point(299, 120);
+            this.cbShowClientSecret.Location = new System.Drawing.Point(299, 143);
             this.cbShowClientSecret.Name = "cbShowClientSecret";
             this.cbShowClientSecret.Size = new System.Drawing.Size(53, 17);
             this.cbShowClientSecret.TabIndex = 29;
@@ -798,11 +806,9 @@
             this.lGoogleAPIInstructions.Multiline = true;
             this.lGoogleAPIInstructions.Name = "lGoogleAPIInstructions";
             this.lGoogleAPIInstructions.ReadOnly = true;
-            this.lGoogleAPIInstructions.Size = new System.Drawing.Size(339, 43);
+            this.lGoogleAPIInstructions.Size = new System.Drawing.Size(339, 71);
             this.lGoogleAPIInstructions.TabIndex = 4;
-            this.lGoogleAPIInstructions.Text = "To change the Client ID and secret, first disconnect your account\r\nby clicking \"D" +
-    "isconnect Account\" above. \r\nObtain new values from the Google Developer Console:" +
-    "";
+            this.lGoogleAPIInstructions.Text = resources.GetString("lGoogleAPIInstructions.Text");
             this.lGoogleAPIInstructions.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.lGoogleAPIInstructions.Visible = false;
             // 
@@ -810,7 +816,7 @@
             // 
             this.tbClientSecret.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbClientSecret.Location = new System.Drawing.Point(63, 117);
+            this.tbClientSecret.Location = new System.Drawing.Point(63, 140);
             this.tbClientSecret.Name = "tbClientSecret";
             this.tbClientSecret.ReadOnly = true;
             this.tbClientSecret.Size = new System.Drawing.Size(230, 20);
@@ -823,7 +829,7 @@
             // 
             this.tbClientID.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbClientID.Location = new System.Drawing.Point(63, 91);
+            this.tbClientID.Location = new System.Drawing.Point(63, 114);
             this.tbClientID.Name = "tbClientID";
             this.tbClientID.ReadOnly = true;
             this.tbClientID.Size = new System.Drawing.Size(289, 20);
@@ -834,7 +840,7 @@
             // lClientID
             // 
             this.lClientID.AutoSize = true;
-            this.lClientID.Location = new System.Drawing.Point(10, 94);
+            this.lClientID.Location = new System.Drawing.Point(10, 117);
             this.lClientID.Name = "lClientID";
             this.lClientID.Size = new System.Drawing.Size(47, 13);
             this.lClientID.TabIndex = 0;
@@ -844,7 +850,7 @@
             // lSecret
             // 
             this.lSecret.AutoSize = true;
-            this.lSecret.Location = new System.Drawing.Point(10, 120);
+            this.lSecret.Location = new System.Drawing.Point(10, 143);
             this.lSecret.Name = "lSecret";
             this.lSecret.Size = new System.Drawing.Size(38, 13);
             this.lSecret.TabIndex = 1;
@@ -904,10 +910,10 @@
             this.lGoogleHelp.Location = new System.Drawing.Point(155, 41);
             this.lGoogleHelp.MaximumSize = new System.Drawing.Size(200, 0);
             this.lGoogleHelp.Name = "lGoogleHelp";
-            this.lGoogleHelp.Size = new System.Drawing.Size(200, 39);
+            this.lGoogleHelp.Size = new System.Drawing.Size(172, 39);
             this.lGoogleHelp.TabIndex = 9;
-            this.lGoogleHelp.Text = "If this is the first time, you\'ll need to authorise the app to connect.\r\nDoesn\'t " +
-    "take long - just follow the steps :)";
+            this.lGoogleHelp.Text = "If this is the first time, you\'ll need to authorise the app to connect.\r\nJust tak" +
+    "es a few clicks :)";
             // 
             // lGoogleCalendar
             // 
@@ -1374,6 +1380,7 @@
             // 
             this.gbSyncOptions_What.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.gbSyncOptions_What.Controls.Add(this.cbCloakEmail);
             this.gbSyncOptions_What.Controls.Add(this.lDNDand);
             this.gbSyncOptions_What.Controls.Add(this.dtDNDend);
             this.gbSyncOptions_What.Controls.Add(this.dtDNDstart);
@@ -1384,13 +1391,14 @@
             this.gbSyncOptions_What.Controls.Add(this.cbAddDescription);
             this.gbSyncOptions_What.Controls.Add(this.cbReminderDND);
             this.gbSyncOptions_What.Controls.Add(this.cbUseGoogleDefaultReminder);
+            this.gbSyncOptions_What.Controls.Add(this.lWhatInfo);
             this.gbSyncOptions_What.Controls.Add(this.tbNumberAttendees);
             this.gbSyncOptions_What.Controls.Add(this.lNumberAttendees);
             this.gbSyncOptions_What.Font = new System.Drawing.Font("Arial Black", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.gbSyncOptions_What.ForeColor = System.Drawing.SystemColors.MenuHighlight;
             this.gbSyncOptions_What.Location = new System.Drawing.Point(12, 273);
             this.gbSyncOptions_What.Name = "gbSyncOptions_What";
-            this.gbSyncOptions_What.Size = new System.Drawing.Size(369, 112);
+            this.gbSyncOptions_What.Size = new System.Drawing.Size(369, 140);
             this.gbSyncOptions_What.TabIndex = 39;
             this.gbSyncOptions_What.TabStop = false;
             this.gbSyncOptions_What.Text = "What";
@@ -1464,9 +1472,9 @@
             this.lAttributes.ForeColor = System.Drawing.SystemColors.ControlText;
             this.lAttributes.Location = new System.Drawing.Point(6, 19);
             this.lAttributes.Name = "lAttributes";
-            this.lAttributes.Size = new System.Drawing.Size(120, 14);
+            this.lAttributes.Size = new System.Drawing.Size(233, 14);
             this.lAttributes.TabIndex = 33;
-            this.lAttributes.Text = "Attributes to include:-";
+            this.lAttributes.Text = "Attributes to include. Affects newly synced items ";
             // 
             // cbAddAttendees
             // 
@@ -1521,7 +1529,7 @@
             this.tbNumberAttendees.Enabled = this.cbAddAttendees.Checked;
             this.tbNumberAttendees.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tbNumberAttendees.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.tbNumberAttendees.Location = new System.Drawing.Point(127, 54);
+            this.tbNumberAttendees.Location = new System.Drawing.Point(45, 110);
             this.tbNumberAttendees.Maximum = new decimal(new int[] {
             365,
             0,
@@ -1542,7 +1550,7 @@
             // 
             this.lNumberAttendees.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lNumberAttendees.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.lNumberAttendees.Location = new System.Drawing.Point(167, 58);
+            this.lNumberAttendees.Location = new System.Drawing.Point(88, 115);
             this.lNumberAttendees.Name = "lNumberAttendees";
             this.lNumberAttendees.Size = new System.Drawing.Size(140, 14);
             this.lNumberAttendees.TabIndex = 37;
@@ -2627,6 +2635,32 @@
             this.trayIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("trayIcon.Icon")));
             this.trayIcon.Text = "Outlook Google Calendar Sync";
             // 
+            // cbCloakEmail
+            // 
+            this.cbCloakEmail.Checked = true;
+            this.cbCloakEmail.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbCloakEmail.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cbCloakEmail.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.cbCloakEmail.Location = new System.Drawing.Point(126, 54);
+            this.cbCloakEmail.Name = "cbCloakEmail";
+            this.cbCloakEmail.Size = new System.Drawing.Size(150, 17);
+            this.cbCloakEmail.TabIndex = 41;
+            this.cbCloakEmail.Text = "Cloak email in Google";
+            this.cbCloakEmail.UseVisualStyleBackColor = true;
+            this.cbCloakEmail.CheckedChanged += new System.EventHandler(this.cbCloakEmail_CheckedChanged);
+            // 
+            // lWhatInfo
+            // 
+            this.lWhatInfo.Font = new System.Drawing.Font("Webdings", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
+            this.lWhatInfo.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.lWhatInfo.Location = new System.Drawing.Point(234, 14);
+            this.lWhatInfo.Name = "lWhatInfo";
+            this.lWhatInfo.Size = new System.Drawing.Size(23, 23);
+            this.lWhatInfo.TabIndex = 42;
+            this.lWhatInfo.Text = "i";
+            this.lWhatInfo.MouseLeave += new System.EventHandler(this.lWhatInfo_MouseLeave);
+            this.lWhatInfo.MouseHover += new System.EventHandler(this.lWhatInfo_MouseHover);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -2871,6 +2905,8 @@
         private System.Windows.Forms.CheckBox cbPrivate;
         private System.Windows.Forms.CheckBox btHowMore;
         private System.Windows.Forms.NumericUpDown tbStartupDelay;
+        private System.Windows.Forms.CheckBox cbCloakEmail;
+        private System.Windows.Forms.Label lWhatInfo;
         private System.Windows.Forms.TabPage tabDevOptions;
         private System.Windows.Forms.GroupBox gbAutoRetryErrors;
         private System.Windows.Forms.CheckBox cbEnableAutoRetry;

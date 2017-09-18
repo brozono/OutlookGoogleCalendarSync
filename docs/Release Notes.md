@@ -1,9 +1,23 @@
 | Release Notes |
 |:---|
 
+# v2.6.2.0 - Alpha
+
+**Enhancements**
+- Option to cloak Google Event attendee email addresses.
+- Additional info/tip when changing "What" attributes to be synced.
+- Handle Outlook and Google calendars being in different timezones.
+- Automatically invert category selection when changing between include/exclude.
+- New pseudo Outlook category "No category assigned".
+
+**Bugfix**
+- Detect copied Outlook items and remove OGCS metadata from copy.
+- Handle failure to update notification tray icon if not present.
+
 # v2.6.1.0 - Alpha
 
-:spiral_notepad: This release will require you to reauthorise OGCS to make changes to your Google calendar.
+:spiral_notepad: This release will require you to reauthorise OGCS to make changes to your Google calendar.  
+:pushpin: If you are using your own API key, you will need to enable Google+ in your project.
 
 **Enhancements**
 - If Outlook address book (GAL) blocked by corporate policy, remove OGCS features in order that basic sync works.

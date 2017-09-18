@@ -39,7 +39,7 @@
     <WebPage>publish.htm</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>2.6.1.1</ApplicationVersion>
+    <ApplicationVersion>2.6.2.1</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -245,6 +245,8 @@
     <Compile Include="EmailAddress.cs" />
     <Compile Include="Exception.cs" />
     <Compile Include="GoogleOgcs\Authenticator.cs" />
+    <Compile Include="GoogleOgcs\EventAttendee.cs" />
+    <Compile Include="Outlook\ExplorerWatcher.cs" />
     <Compile Include="TimezoneDB.cs" />
     <Compile Include="NotificationTray.cs" />
     <Compile Include="Obfuscate.cs" />
