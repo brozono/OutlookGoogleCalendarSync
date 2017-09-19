@@ -259,6 +259,9 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
             Settings.Instance.Donor = true;
             return true;
 
+            // Disable Unreachable code detected warning
+            #pragma warning disable 0162
+
             log.Debug("Retrieving all donors.");
             try {
                 do {
@@ -302,6 +305,10 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                 Settings.Instance.Donor = true;
                 return true;
             }
+
+            // Restore Unreachable code detected warning
+            #pragma warning restore 0162
+
         }
         #endregion
     }
