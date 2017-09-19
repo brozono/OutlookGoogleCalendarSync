@@ -343,10 +343,11 @@ namespace OutlookGoogleCalendarSync {
             ev.Attendees = new List<EventAttendee>();
             if (Settings.Instance.AddAttendees && ai.Recipients.Count > 1 && !APIlimitReached_attendee) { //Don't add attendees if there's only 1 (me)
                 if (ai.Recipients.Count >= 200) {
-                    MainForm.Instance.Logboxout("ALERT: Attendees will not be synced for this meeting as it has " +
+                    log.Info("ALERT: Attendees will not be synced for this meeting as it has " +
                         "more than 200, which Google does not allow.");
                 } else if (ai.Recipients.Count > Settings.Instance.NumberAttendees) {
-                    MainForm.Instance.Logboxout("More than "+ Settings.Instance.NumberAttendees+" attendees ("+ ai.Recipients.Count+"). Skipping attendees for this meeting.");
+                    log.Info("More than "+ Settings.Instance.NumberAttendees + " attendees (" +
+                        ai.Recipients.Count+"). Skipping attendees for this meeting.");
                 } else {
                     foreach (Microsoft.Office.Interop.Outlook.Recipient recipient in ai.Recipients) {
                         EventAttendee ea = GoogleCalendar.CreateAttendee(recipient);
@@ -643,11 +644,12 @@ namespace OutlookGoogleCalendarSync {
 
             if (Settings.Instance.AddAttendees && ai.Recipients.Count > 1 && !APIlimitReached_attendee) {
                 if (ai.Recipients.Count >= 200) {
-                    MainForm.Instance.Logboxout("ALERT: Attendees will not be synced for this meeting as it has " +
+                    log.Info("ALERT: Attendees will not be synced for this meeting as it has " +
                         "more than 200, which Google does not allow.");
                     ev.Attendees = new List<EventAttendee>();
                 } else if (ai.Recipients.Count > Settings.Instance.NumberAttendees) {
-                    MainForm.Instance.Logboxout("More than " + Settings.Instance.NumberAttendees + " attendees (" + ai.Recipients.Count + "). Skipping attendees for this meeting.");
+                    log.Info("More than " + Settings.Instance.NumberAttendees + " attendees (" +
+                        ai.Recipients.Count + "). Skipping attendees for this meeting.");
                 } else {
                     try {
                         CompareRecipientsToAttendees(ai, ev, sb, ref itemModified);

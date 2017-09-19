@@ -136,8 +136,6 @@
             this.cbAddDescription = new System.Windows.Forms.CheckBox();
             this.cbReminderDND = new System.Windows.Forms.CheckBox();
             this.cbUseGoogleDefaultReminder = new System.Windows.Forms.CheckBox();
-            this.tbNumberAttendees = new System.Windows.Forms.NumericUpDown();
-            this.lNumberAttendees = new System.Windows.Forms.Label();
             this.label15 = new System.Windows.Forms.Label();
             this.tabAppBehaviour = new System.Windows.Forms.TabPage();
             this.tbStartupDelay = new System.Windows.Forms.NumericUpDown();
@@ -221,6 +219,9 @@
             this.trayIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.cbCloakEmail = new System.Windows.Forms.CheckBox();
             this.lWhatInfo = new System.Windows.Forms.Label();
+            this.tbNumberAttendees = new System.Windows.Forms.NumericUpDown();
+            this.gbSyncOptions = new System.Windows.Forms.GroupBox();
+            this.lNumberAttendees = new System.Windows.Forms.Label();
             this.tabApp.SuspendLayout();
             this.tabPage_Sync.SuspendLayout();
             this.tabPage_Settings.SuspendLayout();
@@ -241,7 +242,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.tbDaysInThePast)).BeginInit();
             this.WhatPostit.SuspendLayout();
             this.gbSyncOptions_What.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).BeginInit();
             this.tabAppBehaviour.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbStartupDelay)).BeginInit();
             this.gbProxy.SuspendLayout();
@@ -258,6 +258,8 @@
             this.tableLayoutPanel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbSocialGplusCommunity)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pbSocialTwitterFollow)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).BeginInit();
+            this.gbSyncOptions.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabApp
@@ -1392,13 +1394,11 @@
             this.gbSyncOptions_What.Controls.Add(this.cbReminderDND);
             this.gbSyncOptions_What.Controls.Add(this.cbUseGoogleDefaultReminder);
             this.gbSyncOptions_What.Controls.Add(this.lWhatInfo);
-            this.gbSyncOptions_What.Controls.Add(this.tbNumberAttendees);
-            this.gbSyncOptions_What.Controls.Add(this.lNumberAttendees);
             this.gbSyncOptions_What.Font = new System.Drawing.Font("Arial Black", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.gbSyncOptions_What.ForeColor = System.Drawing.SystemColors.MenuHighlight;
             this.gbSyncOptions_What.Location = new System.Drawing.Point(12, 273);
             this.gbSyncOptions_What.Name = "gbSyncOptions_What";
-            this.gbSyncOptions_What.Size = new System.Drawing.Size(369, 140);
+            this.gbSyncOptions_What.Size = new System.Drawing.Size(369, 112);
             this.gbSyncOptions_What.TabIndex = 39;
             this.gbSyncOptions_What.TabStop = false;
             this.gbSyncOptions_What.Text = "What";
@@ -1523,38 +1523,6 @@
             this.cbUseGoogleDefaultReminder.Text = "Use Google default";
             this.cbUseGoogleDefaultReminder.UseVisualStyleBackColor = true;
             this.cbUseGoogleDefaultReminder.CheckedChanged += new System.EventHandler(this.cbUseGoogleDefaultReminder_CheckedChanged);
-            // 
-            // tbNumberAttendees
-            // 
-            this.tbNumberAttendees.Enabled = this.cbAddAttendees.Checked;
-            this.tbNumberAttendees.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tbNumberAttendees.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.tbNumberAttendees.Location = new System.Drawing.Point(45, 110);
-            this.tbNumberAttendees.Maximum = new decimal(new int[] {
-            365,
-            0,
-            0,
-            0});
-            this.tbNumberAttendees.Name = "tbNumberAttendees";
-            this.tbNumberAttendees.Size = new System.Drawing.Size(40, 20);
-            this.tbNumberAttendees.TabIndex = 36;
-            this.tbNumberAttendees.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.tbNumberAttendees.Value = new decimal(new int[] {
-            99,
-            0,
-            0,
-            0});
-            this.tbNumberAttendees.ValueChanged += new System.EventHandler(this.tbNumberAttendees_ValueChanged);
-            // 
-            // lNumberAttendees
-            // 
-            this.lNumberAttendees.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lNumberAttendees.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.lNumberAttendees.Location = new System.Drawing.Point(88, 115);
-            this.lNumberAttendees.Name = "lNumberAttendees";
-            this.lNumberAttendees.Size = new System.Drawing.Size(140, 14);
-            this.lNumberAttendees.TabIndex = 37;
-            this.lNumberAttendees.Text = "Max number of attendees";
             // 
             // label15
             // 
@@ -1928,6 +1896,7 @@
             // tabDevOptions
             // 
             this.tabDevOptions.BackColor = System.Drawing.Color.White;
+            this.tabDevOptions.Controls.Add(this.gbSyncOptions);
             this.tabDevOptions.Controls.Add(this.gbAutoRetryErrors);
             this.tabDevOptions.Location = new System.Drawing.Point(79, 4);
             this.tabDevOptions.Name = "tabDevOptions";
@@ -2661,6 +2630,50 @@
             this.lWhatInfo.MouseLeave += new System.EventHandler(this.lWhatInfo_MouseLeave);
             this.lWhatInfo.MouseHover += new System.EventHandler(this.lWhatInfo_MouseHover);
             // 
+            // tbNumberAttendees
+            // 
+            this.tbNumberAttendees.Enabled = this.cbAddAttendees.Checked;
+            this.tbNumberAttendees.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbNumberAttendees.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.tbNumberAttendees.Location = new System.Drawing.Point(18, 31);
+            this.tbNumberAttendees.Maximum = new decimal(new int[] {
+            365,
+            0,
+            0,
+            0});
+            this.tbNumberAttendees.Name = "tbNumberAttendees";
+            this.tbNumberAttendees.Size = new System.Drawing.Size(40, 20);
+            this.tbNumberAttendees.TabIndex = 37;
+            this.tbNumberAttendees.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.tbNumberAttendees.Value = new decimal(new int[] {
+            99,
+            0,
+            0,
+            0});
+            // 
+            // gbSyncOptions
+            // 
+            this.gbSyncOptions.Controls.Add(this.lNumberAttendees);
+            this.gbSyncOptions.Controls.Add(this.tbNumberAttendees);
+            this.gbSyncOptions.Font = new System.Drawing.Font("Arial Narrow", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.gbSyncOptions.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.gbSyncOptions.Location = new System.Drawing.Point(12, 113);
+            this.gbSyncOptions.Name = "gbSyncOptions";
+            this.gbSyncOptions.Size = new System.Drawing.Size(369, 72);
+            this.gbSyncOptions.TabIndex = 38;
+            this.gbSyncOptions.TabStop = false;
+            this.gbSyncOptions.Text = "Sync Options";
+            // 
+            // lNumberAttendees
+            // 
+            this.lNumberAttendees.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lNumberAttendees.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.lNumberAttendees.Location = new System.Drawing.Point(83, 37);
+            this.lNumberAttendees.Name = "lNumberAttendees";
+            this.lNumberAttendees.Size = new System.Drawing.Size(140, 14);
+            this.lNumberAttendees.TabIndex = 38;
+            this.lNumberAttendees.Text = "Max number of attendees";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -2703,7 +2716,6 @@
             this.WhatPostit.ResumeLayout(false);
             this.gbSyncOptions_What.ResumeLayout(false);
             this.gbSyncOptions_What.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).EndInit();
             this.tabAppBehaviour.ResumeLayout(false);
             this.tabAppBehaviour.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbStartupDelay)).EndInit();
@@ -2728,6 +2740,8 @@
             this.tableLayoutPanel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbSocialGplusCommunity)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pbSocialTwitterFollow)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).EndInit();
+            this.gbSyncOptions.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -2833,8 +2847,6 @@
         private System.Windows.Forms.CheckBox cbAddReminders;
         private System.Windows.Forms.Label lAttributes;
         private System.Windows.Forms.CheckBox cbAddAttendees;
-        private System.Windows.Forms.NumericUpDown tbNumberAttendees;
-        private System.Windows.Forms.Label lNumberAttendees;
         private System.Windows.Forms.CheckBox cbAddDescription;
         private System.Windows.Forms.GroupBox gbSyncOptions_How;
         private System.Windows.Forms.CheckBox cbOfuscate;
@@ -2912,5 +2924,8 @@
         private System.Windows.Forms.CheckBox cbEnableAutoRetry;
         private System.Windows.Forms.Label lRetryDelay;
         private System.Windows.Forms.NumericUpDown tbAutoRetryDelay;
+        private System.Windows.Forms.GroupBox gbSyncOptions;
+        private System.Windows.Forms.Label lNumberAttendees;
+        private System.Windows.Forms.NumericUpDown tbNumberAttendees;
     }
 }
