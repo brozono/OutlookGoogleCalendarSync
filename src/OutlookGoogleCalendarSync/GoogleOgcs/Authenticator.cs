@@ -15,7 +15,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
     public class Authenticator {
         private static readonly ILog log = LogManager.GetLogger(typeof(Authenticator));
 
-        private const String tokenFile = "Google.Apis.Auth.OAuth2.Responses.TokenResponse-user";
+        public const String TokenFile = "Google.Apis.Auth.OAuth2.Responses.TokenResponse-user";
         String tokenFullPath;
         Boolean tokenFileExists { get { return File.Exists(tokenFullPath); } }
 
@@ -66,7 +66,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
             log.Debug("Authenticating with Google calendar service...");
 
             FileDataStore tokenStore = new FileDataStore(Program.UserFilePath);
-            tokenFullPath = Path.Combine(tokenStore.FolderPath, tokenFile);
+            tokenFullPath = Path.Combine(tokenStore.FolderPath, TokenFile);
 
             log.Debug("Google credential file location: " + tokenFullPath);
             if (!tokenFileExists)
