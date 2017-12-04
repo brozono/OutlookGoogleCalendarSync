@@ -1172,6 +1172,7 @@
             this.cbObfuscateDirection.Name = "cbObfuscateDirection";
             this.cbObfuscateDirection.Size = new System.Drawing.Size(265, 21);
             this.cbObfuscateDirection.TabIndex = 46;
+            this.cbObfuscateDirection.SelectedIndexChanged += new System.EventHandler(this.cbObfuscateDirection_SelectedIndexChanged);
             // 
             // label31
             // 
@@ -1215,6 +1216,7 @@
             this.dgObfuscateRegex.ShowCellToolTips = false;
             this.dgObfuscateRegex.Size = new System.Drawing.Size(351, 99);
             this.dgObfuscateRegex.TabIndex = 45;
+            this.dgObfuscateRegex.Leave += new System.EventHandler(this.dgObfuscateRegex_Leave);
             // 
             // regexFind
             // 
