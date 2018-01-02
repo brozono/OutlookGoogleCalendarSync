@@ -1553,14 +1553,27 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                 value = ev.ExtendedProperties.Private[key];
 
                 if (id == MetadataId.oEntryId && Settings.Instance.SyncDirection == SyncDirection.OutlookToGoogleSimple) {
-                    if (ev.Start.DateTime != null) {
-                        DateTime gDate = DateTime.Parse(ev.Start.DateTime);
-                        value += " " + gDate.ToShortDateString() + " " + gDate.ToShortTimeString();
-                    }
-                    if (ev.End.DateTime != null) {
-                        DateTime gDate = DateTime.Parse(ev.End.DateTime);
-                        value += " " + gDate.ToShortDateString() + " " + gDate.ToShortTimeString();
-                    }
+                    DateTime gDate;
+                    if (ev.Start.DateTime != null)
+                        gDate = DateTime.Parse(ev.Start.DateTime);                        
+                    else if( ev.Start.Date != null) {
+                        // Format is yyyy-MM-dd and we want MM/dd/yyyy
+                        String[] dates = ev.Start.Date.Split('-');
+                        gDate = new DateTime(Convert.ToInt32(dates[0], 10), Convert.ToInt32(dates[1], 10), Convert.ToInt32(dates[2], 10));
+                    } else
+                        gDate = new DateTime(0, 0, 0);
+                    
+                    value += " " + gDate.ToShortDateString() + " " + gDate.ToShortTimeString();
+
+                    if (ev.End.DateTime != null)
+                        gDate = DateTime.Parse(ev.End.DateTime);                        
+                    else if (ev.End.Date != null) {
+                        // Format is yyyy-MM-dd and we want MM/dd/yyyy
+                        String[] dates = ev.End.Date.Split('-');
+                        gDate = new DateTime(Convert.ToInt32(dates[0], 10), Convert.ToInt32(dates[1], 10), Convert.ToInt32(dates[2], 10));
+                    } else
+                        gDate = new DateTime(0, 0, 0);
+                    value += " " + gDate.ToShortDateString() + " " + gDate.ToShortTimeString();
                 }
 
                 return true;
