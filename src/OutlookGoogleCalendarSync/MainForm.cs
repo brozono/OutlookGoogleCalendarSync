@@ -368,6 +368,7 @@ namespace OutlookGoogleCalendarSync {
             cbEnableAutoRetry.Checked = Settings.Instance.EnableAutoRetry;
             tbAutoRetryDelay.Value = Settings.Instance.AutoRetryDelayMin;
             tbNumberAttendees.Value = Settings.Instance.NumberAttendees;
+            cbEnableAttendeeWarning.Checked = Settings.Instance.EnableAttendeeWarning;
             #endregion
             #region About
             int r = 0;
@@ -2080,6 +2081,9 @@ namespace OutlookGoogleCalendarSync {
         {
             Settings.Instance.AutoRetryDelayMin = (int)tbAutoRetryDelay.Value;
         }
+        private void cbEnableAttendeeWarning_CheckedChanged(object sender, EventArgs e) {
+            Settings.Instance.EnableAttendeeWarning = cbEnableAttendeeWarning.Checked;
+        }
         private void tbNumberAttendees_ValueChanged(object sender, EventArgs e)
         {
             Settings.Instance.NumberAttendees = (int)tbNumberAttendees.Value;
@@ -2212,5 +2216,9 @@ namespace OutlookGoogleCalendarSync {
         }
 
         #endregion
+
+        private void lNumberAttendees_Click(object sender, EventArgs e) {
+
+        }
     }
 }

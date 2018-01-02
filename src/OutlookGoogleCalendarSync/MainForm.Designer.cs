@@ -173,13 +173,14 @@
             this.cbCreateFiles = new System.Windows.Forms.CheckBox();
             this.cbStartOnStartup = new System.Windows.Forms.CheckBox();
             this.tabDevOptions = new System.Windows.Forms.TabPage();
+            this.gbSyncOptions_Dev = new System.Windows.Forms.GroupBox();
+            this.cbEnableAttendeeWarning = new System.Windows.Forms.CheckBox();
+            this.lNumberAttendees = new System.Windows.Forms.Label();
+            this.tbNumberAttendees = new System.Windows.Forms.NumericUpDown();
             this.gbAutoRetryErrors = new System.Windows.Forms.GroupBox();
             this.lRetryDelay = new System.Windows.Forms.Label();
             this.tbAutoRetryDelay = new System.Windows.Forms.NumericUpDown();
             this.cbEnableAutoRetry = new System.Windows.Forms.CheckBox();
-            this.tbNumberAttendees = new System.Windows.Forms.NumericUpDown();
-            this.gbSyncOptions_Dev = new System.Windows.Forms.GroupBox();
-            this.lNumberAttendees = new System.Windows.Forms.Label();
             this.bSave = new System.Windows.Forms.Button();
             this.tabPage_Help = new System.Windows.Forms.TabPage();
             this.tbTS2 = new System.Windows.Forms.TextBox();
@@ -253,10 +254,10 @@
             ((System.ComponentModel.ISupportInitialize)(this.tbStartupDelay)).BeginInit();
             this.gbProxy.SuspendLayout();
             this.tabDevOptions.SuspendLayout();
+            this.gbSyncOptions_Dev.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).BeginInit();
             this.gbAutoRetryErrors.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbAutoRetryDelay)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).BeginInit();
-            this.gbSyncOptions_Dev.SuspendLayout();
             this.tabPage_Help.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.tabPage_About.SuspendLayout();
@@ -2004,6 +2005,65 @@
             this.tabDevOptions.TabIndex = 4;
             this.tabDevOptions.Text = "Developer Options";
             // 
+            // gbSyncOptions_Dev
+            // 
+            this.gbSyncOptions_Dev.Controls.Add(this.cbEnableAttendeeWarning);
+            this.gbSyncOptions_Dev.Controls.Add(this.lNumberAttendees);
+            this.gbSyncOptions_Dev.Controls.Add(this.tbNumberAttendees);
+            this.gbSyncOptions_Dev.Font = new System.Drawing.Font("Arial Black", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.gbSyncOptions_Dev.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.gbSyncOptions_Dev.Location = new System.Drawing.Point(12, 113);
+            this.gbSyncOptions_Dev.Name = "gbSyncOptions_Dev";
+            this.gbSyncOptions_Dev.Size = new System.Drawing.Size(369, 83);
+            this.gbSyncOptions_Dev.TabIndex = 38;
+            this.gbSyncOptions_Dev.TabStop = false;
+            this.gbSyncOptions_Dev.Text = "Sync Options";
+            // 
+            // cbEnableAttendeeWarning
+            // 
+            this.cbEnableAttendeeWarning.AutoSize = true;
+            this.cbEnableAttendeeWarning.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cbEnableAttendeeWarning.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.cbEnableAttendeeWarning.Location = new System.Drawing.Point(18, 22);
+            this.cbEnableAttendeeWarning.Name = "cbEnableAttendeeWarning";
+            this.cbEnableAttendeeWarning.Size = new System.Drawing.Size(171, 17);
+            this.cbEnableAttendeeWarning.TabIndex = 39;
+            this.cbEnableAttendeeWarning.Text = "Enable Max Attendee Warning";
+            this.cbEnableAttendeeWarning.UseVisualStyleBackColor = true;
+            this.cbEnableAttendeeWarning.CheckedChanged += new System.EventHandler(this.cbEnableAttendeeWarning_CheckedChanged);
+            // 
+            // lNumberAttendees
+            // 
+            this.lNumberAttendees.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lNumberAttendees.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.lNumberAttendees.Location = new System.Drawing.Point(83, 52);
+            this.lNumberAttendees.Name = "lNumberAttendees";
+            this.lNumberAttendees.Size = new System.Drawing.Size(140, 14);
+            this.lNumberAttendees.TabIndex = 38;
+            this.lNumberAttendees.Text = "Max number of attendees";
+            this.lNumberAttendees.Click += new System.EventHandler(this.lNumberAttendees_Click);
+            // 
+            // tbNumberAttendees
+            // 
+            this.tbNumberAttendees.Enabled = this.cbAddAttendees.Checked;
+            this.tbNumberAttendees.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbNumberAttendees.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.tbNumberAttendees.Location = new System.Drawing.Point(18, 46);
+            this.tbNumberAttendees.Maximum = new decimal(new int[] {
+            365,
+            0,
+            0,
+            0});
+            this.tbNumberAttendees.Name = "tbNumberAttendees";
+            this.tbNumberAttendees.Size = new System.Drawing.Size(58, 20);
+            this.tbNumberAttendees.TabIndex = 37;
+            this.tbNumberAttendees.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.tbNumberAttendees.Value = new decimal(new int[] {
+            99,
+            0,
+            0,
+            0});
+            // 
             // gbAutoRetryErrors
             // 
             this.gbAutoRetryErrors.Controls.Add(this.lRetryDelay);
@@ -2065,50 +2125,6 @@
             this.cbEnableAutoRetry.Text = "Enable Auto Retry";
             this.cbEnableAutoRetry.UseVisualStyleBackColor = true;
             this.cbEnableAutoRetry.CheckedChanged += new System.EventHandler(this.cbEnableAutoRetry_CheckedChanged);
-            // 
-            // tbNumberAttendees
-            // 
-            this.tbNumberAttendees.Enabled = this.cbAddAttendees.Checked;
-            this.tbNumberAttendees.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tbNumberAttendees.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.tbNumberAttendees.Location = new System.Drawing.Point(18, 31);
-            this.tbNumberAttendees.Maximum = new decimal(new int[] {
-            365,
-            0,
-            0,
-            0});
-            this.tbNumberAttendees.Name = "tbNumberAttendees";
-            this.tbNumberAttendees.Size = new System.Drawing.Size(40, 20);
-            this.tbNumberAttendees.TabIndex = 37;
-            this.tbNumberAttendees.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.tbNumberAttendees.Value = new decimal(new int[] {
-            99,
-            0,
-            0,
-            0});
-            // 
-            // gbSyncOptions_Dev
-            // 
-            this.gbSyncOptions_Dev.Controls.Add(this.lNumberAttendees);
-            this.gbSyncOptions_Dev.Controls.Add(this.tbNumberAttendees);
-            this.gbSyncOptions_Dev.Font = new System.Drawing.Font("Arial Black", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.gbSyncOptions_Dev.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.gbSyncOptions_Dev.Location = new System.Drawing.Point(12, 113);
-            this.gbSyncOptions_Dev.Name = "gbSyncOptions_Dev";
-            this.gbSyncOptions_Dev.Size = new System.Drawing.Size(369, 72);
-            this.gbSyncOptions_Dev.TabIndex = 38;
-            this.gbSyncOptions_Dev.TabStop = false;
-            this.gbSyncOptions_Dev.Text = "Sync Options";
-            // 
-            // lNumberAttendees
-            // 
-            this.lNumberAttendees.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lNumberAttendees.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.lNumberAttendees.Location = new System.Drawing.Point(83, 37);
-            this.lNumberAttendees.Name = "lNumberAttendees";
-            this.lNumberAttendees.Size = new System.Drawing.Size(140, 14);
-            this.lNumberAttendees.TabIndex = 38;
-            this.lNumberAttendees.Text = "Max number of attendees";
             // 
             // bSave
             // 
@@ -2808,11 +2824,12 @@
             this.gbProxy.ResumeLayout(false);
             this.gbProxy.PerformLayout();
             this.tabDevOptions.ResumeLayout(false);
+            this.gbSyncOptions_Dev.ResumeLayout(false);
+            this.gbSyncOptions_Dev.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).EndInit();
             this.gbAutoRetryErrors.ResumeLayout(false);
             this.gbAutoRetryErrors.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbAutoRetryDelay)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).EndInit();
-            this.gbSyncOptions_Dev.ResumeLayout(false);
             this.tabPage_Help.ResumeLayout(false);
             this.tabPage_Help.PerformLayout();
             this.tableLayoutPanel1.ResumeLayout(false);
@@ -3019,5 +3036,6 @@
         private System.Windows.Forms.GroupBox gbSyncOptions_Dev;
         private System.Windows.Forms.Label lNumberAttendees;
         private System.Windows.Forms.NumericUpDown tbNumberAttendees;
+        private System.Windows.Forms.CheckBox cbEnableAttendeeWarning;
     }
 }

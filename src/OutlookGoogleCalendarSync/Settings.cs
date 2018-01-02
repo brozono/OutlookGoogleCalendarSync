@@ -99,6 +99,7 @@ namespace OutlookGoogleCalendarSync {
 
             EnableAutoRetry = false;
             AutoRetryDelayMin = 1;
+            EnableAttendeeWarning = false;
             NumberAttendees = 200;
             
             lastSyncDate = new DateTime(0);
@@ -257,6 +258,7 @@ namespace OutlookGoogleCalendarSync {
         #region Dev Options
         [DataMember] public bool EnableAutoRetry { get; set; }
         [DataMember] public int AutoRetryDelayMin { get; set; }
+        [DataMember] public bool EnableAttendeeWarning { get; set; }
         [DataMember] public int NumberAttendees { get; set; }
         #endregion
         #region About
@@ -429,6 +431,7 @@ namespace OutlookGoogleCalendarSync {
             log.Info("DEVELOPER OPTIONS:-");
             log.Info("  Enable Retry: " + EnableAutoRetry);
             log.Info("  Auto Retry Delay (min): " + AutoRetryDelayMin);
+            log.Info("  Enable Attendee Warning: " + EnableAttendeeWarning);
 
             log.Info("ABOUT:-");
             log.Info("  Alpha Releases: " + alphaReleases);

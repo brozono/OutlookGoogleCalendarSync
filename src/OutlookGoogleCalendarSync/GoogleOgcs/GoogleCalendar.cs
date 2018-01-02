@@ -354,10 +354,12 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
             ev.Attendees = new List<Google.Apis.Calendar.v3.Data.EventAttendee>();
             if (Settings.Instance.AddAttendees && ai.Recipients.Count > 1 && !APIlimitReached_attendee) { //Don't add attendees if there's only 1 (me)
                 if (ai.Recipients.Count >= 200) {
-                    MainForm.Instance.Console.Update("Attendees will not be synced for this meeting as it has " +
-                        "more than 200, which Google does not allow.", Console.Markup.warning);
+                    if (Settings.Instance.EnableAttendeeWarning)
+                        MainForm.Instance.Console.Update("Attendees will not be synced for this meeting as it has " +
+                            "more than 200, which Google does not allow.", Console.Markup.warning);
                 } else if (ai.Recipients.Count > Settings.Instance.NumberAttendees) {
-                    MainForm.Instance.Console.Update("Attendees will not be synced for this meeting as it has " +
+                    if (Settings.Instance.EnableAttendeeWarning)
+                        MainForm.Instance.Console.Update("Attendees will not be synced for this meeting as it has " +
                         "more than " + Settings.Instance.NumberAttendees + ", which settings does not allow.", Console.Markup.warning);
                 } else {
                     foreach (Microsoft.Office.Interop.Outlook.Recipient recipient in ai.Recipients) {
@@ -658,11 +660,13 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
 
             if (Settings.Instance.AddAttendees && ai.Recipients.Count > 1 && !APIlimitReached_attendee) {
                 if (ai.Recipients.Count >= 200) {
-                    MainForm.Instance.Console.Update(OutlookOgcs.Calendar.GetEventSummary(ai) + "<br/>Attendees will not be synced for this meeting as it has " +
+                    if (Settings.Instance.EnableAttendeeWarning)
+                        MainForm.Instance.Console.Update(OutlookOgcs.Calendar.GetEventSummary(ai) + "<br/>Attendees will not be synced for this meeting as it has " +
                         "more than 200, which Google does not allow.", Console.Markup.warning);
                     ev.Attendees = new List<Google.Apis.Calendar.v3.Data.EventAttendee>();
                 } else if (ai.Recipients.Count > Settings.Instance.NumberAttendees) {
-                    MainForm.Instance.Console.Update(OutlookOgcs.Calendar.GetEventSummary(ai) + "<br/>Attendees will not be synced for this meeting as it has " +
+                    if (Settings.Instance.EnableAttendeeWarning)
+                        MainForm.Instance.Console.Update(OutlookOgcs.Calendar.GetEventSummary(ai) + "<br/>Attendees will not be synced for this meeting as it has " +
                         "more than " + Settings.Instance.NumberAttendees + ", which settings does not allow.", Console.Markup.warning);
                     ev.Attendees = new List<Google.Apis.Calendar.v3.Data.EventAttendee>();
                 } else {
