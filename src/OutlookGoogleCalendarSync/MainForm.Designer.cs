@@ -178,8 +178,6 @@
             this.lNumberAttendees = new System.Windows.Forms.Label();
             this.tbNumberAttendees = new System.Windows.Forms.NumericUpDown();
             this.gbAutoRetryErrors = new System.Windows.Forms.GroupBox();
-            this.lRetryDelay = new System.Windows.Forms.Label();
-            this.tbAutoRetryDelay = new System.Windows.Forms.NumericUpDown();
             this.cbEnableAutoRetry = new System.Windows.Forms.CheckBox();
             this.bSave = new System.Windows.Forms.Button();
             this.tabPage_Help = new System.Windows.Forms.TabPage();
@@ -229,6 +227,7 @@
             this.pbSocialTwitterFollow = new System.Windows.Forms.PictureBox();
             this.label2 = new System.Windows.Forms.Label();
             this.trayIcon = new System.Windows.Forms.NotifyIcon(this.components);
+            this.GappBrowser = new System.Windows.Forms.WebBrowser();
             this.tabApp.SuspendLayout();
             this.tabPage_Sync.SuspendLayout();
             this.consolePanel.SuspendLayout();
@@ -257,7 +256,6 @@
             this.gbSyncOptions_Dev.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).BeginInit();
             this.gbAutoRetryErrors.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.tbAutoRetryDelay)).BeginInit();
             this.tabPage_Help.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.tabPage_About.SuspendLayout();
@@ -2012,7 +2010,7 @@
             this.gbSyncOptions_Dev.Controls.Add(this.tbNumberAttendees);
             this.gbSyncOptions_Dev.Font = new System.Drawing.Font("Arial Black", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.gbSyncOptions_Dev.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.gbSyncOptions_Dev.Location = new System.Drawing.Point(12, 113);
+            this.gbSyncOptions_Dev.Location = new System.Drawing.Point(12, 66);
             this.gbSyncOptions_Dev.Name = "gbSyncOptions_Dev";
             this.gbSyncOptions_Dev.Size = new System.Drawing.Size(369, 83);
             this.gbSyncOptions_Dev.TabIndex = 38;
@@ -2041,7 +2039,6 @@
             this.lNumberAttendees.Size = new System.Drawing.Size(140, 14);
             this.lNumberAttendees.TabIndex = 38;
             this.lNumberAttendees.Text = "Max number of attendees";
-            this.lNumberAttendees.Click += new System.EventHandler(this.lNumberAttendees_Click);
             // 
             // tbNumberAttendees
             // 
@@ -2066,52 +2063,15 @@
             // 
             // gbAutoRetryErrors
             // 
-            this.gbAutoRetryErrors.Controls.Add(this.lRetryDelay);
-            this.gbAutoRetryErrors.Controls.Add(this.tbAutoRetryDelay);
             this.gbAutoRetryErrors.Controls.Add(this.cbEnableAutoRetry);
             this.gbAutoRetryErrors.Font = new System.Drawing.Font("Arial Black", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.gbAutoRetryErrors.ForeColor = System.Drawing.SystemColors.MenuHighlight;
             this.gbAutoRetryErrors.Location = new System.Drawing.Point(12, 11);
             this.gbAutoRetryErrors.Name = "gbAutoRetryErrors";
-            this.gbAutoRetryErrors.Size = new System.Drawing.Size(369, 83);
+            this.gbAutoRetryErrors.Size = new System.Drawing.Size(369, 49);
             this.gbAutoRetryErrors.TabIndex = 2;
             this.gbAutoRetryErrors.TabStop = false;
             this.gbAutoRetryErrors.Text = "Auto Retry on Errors";
-            // 
-            // lRetryDelay
-            // 
-            this.lRetryDelay.AutoSize = true;
-            this.lRetryDelay.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lRetryDelay.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.lRetryDelay.Location = new System.Drawing.Point(83, 50);
-            this.lRetryDelay.Name = "lRetryDelay";
-            this.lRetryDelay.Size = new System.Drawing.Size(87, 13);
-            this.lRetryDelay.TabIndex = 2;
-            this.lRetryDelay.Text = "Retry Delay (min)";
-            // 
-            // tbAutoRetryDelay
-            // 
-            this.tbAutoRetryDelay.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tbAutoRetryDelay.Location = new System.Drawing.Point(18, 44);
-            this.tbAutoRetryDelay.Maximum = new decimal(new int[] {
-            60,
-            0,
-            0,
-            0});
-            this.tbAutoRetryDelay.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.tbAutoRetryDelay.Name = "tbAutoRetryDelay";
-            this.tbAutoRetryDelay.Size = new System.Drawing.Size(58, 20);
-            this.tbAutoRetryDelay.TabIndex = 1;
-            this.tbAutoRetryDelay.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.tbAutoRetryDelay.ValueChanged += new System.EventHandler(this.tbAutoRetryDelay_ValueChanged);
             // 
             // cbEnableAutoRetry
             // 
@@ -2243,10 +2203,10 @@
             this.label20.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label20.Location = new System.Drawing.Point(74, 38);
             this.label20.Name = "label20";
-            this.label20.Size = new System.Drawing.Size(347, 26);
+            this.label20.Size = new System.Drawing.Size(349, 26);
             this.label20.TabIndex = 40;
             this.label20.Text = "All the configuration is defined on the \"Settings\" tab above.\r\nTry hovering the m" +
-    "ouse over individual settings for extra tips, if available.";
+    "ouse over individual settings for extra tips, or press F1.";
             this.label20.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // tableLayoutPanel1
@@ -2420,6 +2380,7 @@
             this.tabPage_About.Controls.Add(this.lAboutURL);
             this.tabPage_About.Controls.Add(this.lAboutMain);
             this.tabPage_About.Controls.Add(this.pbDonate);
+            this.tabPage_About.Controls.Add(this.GappBrowser);
             this.tabPage_About.Location = new System.Drawing.Point(4, 22);
             this.tabPage_About.Name = "tabPage_About";
             this.tabPage_About.Padding = new System.Windows.Forms.Padding(3);
@@ -2775,6 +2736,16 @@
             this.cbMuteClicks.UseVisualStyleBackColor = true;
             this.cbMuteClicks.CheckedChanged += new System.EventHandler(this.cbMuteClicks_CheckedChanged);
             // 
+            // GappBrowser
+            // 
+            this.GappBrowser.Location = new System.Drawing.Point(30, 207);
+            this.GappBrowser.MinimumSize = new System.Drawing.Size(20, 20);
+            this.GappBrowser.Name = "GappBrowser";
+            this.GappBrowser.ScriptErrorsSuppressed = true;
+            this.GappBrowser.Size = new System.Drawing.Size(250, 51);
+            this.GappBrowser.TabIndex = 45;
+            this.GappBrowser.Visible = false;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -2829,7 +2800,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).EndInit();
             this.gbAutoRetryErrors.ResumeLayout(false);
             this.gbAutoRetryErrors.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.tbAutoRetryDelay)).EndInit();
             this.tabPage_Help.ResumeLayout(false);
             this.tabPage_Help.PerformLayout();
             this.tableLayoutPanel1.ResumeLayout(false);
@@ -3026,13 +2996,12 @@
         private System.Windows.Forms.DomainUpDown tbCreatedItemsOnly;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Panel consolePanel;
-        public System.Windows.Forms.WebBrowser consoleWebBrowser;
+        private System.Windows.Forms.WebBrowser consoleWebBrowser;
         private System.Windows.Forms.CheckBox cbMuteClicks;
+        public System.Windows.Forms.WebBrowser GappBrowser;
         private System.Windows.Forms.TabPage tabDevOptions;
         private System.Windows.Forms.GroupBox gbAutoRetryErrors;
         private System.Windows.Forms.CheckBox cbEnableAutoRetry;
-        private System.Windows.Forms.Label lRetryDelay;
-        private System.Windows.Forms.NumericUpDown tbAutoRetryDelay;
         private System.Windows.Forms.GroupBox gbSyncOptions_Dev;
         private System.Windows.Forms.Label lNumberAttendees;
         private System.Windows.Forms.NumericUpDown tbNumberAttendees;

@@ -93,12 +93,12 @@ namespace OutlookGoogleCalendarSync {
             Proxy = new SettingsProxy();
 
             alphaReleases = false;
+            SkipVersion = null;
             Subscribed = DateTime.Parse("01-Jan-2000");
             donor = true;
             hideSplashScreen = true;
 
             EnableAutoRetry = false;
-            AutoRetryDelayMin = 1;
             EnableAttendeeWarning = false;
             NumberAttendees = 200;
             
@@ -257,7 +257,6 @@ namespace OutlookGoogleCalendarSync {
         #endregion
         #region Dev Options
         [DataMember] public bool EnableAutoRetry { get; set; }
-        [DataMember] public int AutoRetryDelayMin { get; set; }
         [DataMember] public bool EnableAttendeeWarning { get; set; }
         [DataMember] public int NumberAttendees { get; set; }
         #endregion
@@ -304,6 +303,7 @@ namespace OutlookGoogleCalendarSync {
         }
         [DataMember] public bool VerboseOutput { get; set; }
         [DataMember] public bool MuteClickSounds { get; set; }
+        [DataMember] public String SkipVersion { get; set; }
 
         public static void Load(string XMLfile = null) {
             try {
@@ -430,11 +430,11 @@ namespace OutlookGoogleCalendarSync {
 
             log.Info("DEVELOPER OPTIONS:-");
             log.Info("  Enable Retry: " + EnableAutoRetry);
-            log.Info("  Auto Retry Delay (min): " + AutoRetryDelayMin);
             log.Info("  Enable Attendee Warning: " + EnableAttendeeWarning);
 
             log.Info("ABOUT:-");
             log.Info("  Alpha Releases: " + alphaReleases);
+            log.Info("  Skip Version: " + SkipVersion);
             log.Info("  Subscribed: " + Subscribed.ToString("dd-MMM-yyyy"));
             log.Info("  Timezone Database: " + TimezoneDB.Instance.Version);
             

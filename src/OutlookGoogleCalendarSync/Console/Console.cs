@@ -140,8 +140,12 @@ namespace OutlookGoogleCalendarSync {
             if (this.wb != null) return;
             this.wb = wb;
 
+            if (System.Diagnostics.Debugger.IsAttached)
+                wb.IsWebBrowserContextMenuEnabled = true;
+
             wb.Navigate("about:blank");
             wb.AllowNavigation = true;
+            wb.WebBrowserShortcutsEnabled = false;
             wb.Document.Write(header + footer);
             this.awaitingRefresh = true;
             wb.Refresh(WebBrowserRefreshOption.Completely);
@@ -230,15 +234,10 @@ namespace OutlookGoogleCalendarSync {
 
             if ((verbose && Settings.Instance.VerboseOutput) || !verbose) {
                 //Let's grab the 'content' div with regex
-                String allDocument = content;
                 Regex rgx = new Regex("<div id=\'content\'>(.*)</div>", RegexOptions.IgnoreCase | RegexOptions.Multiline);
-                MatchCollection matches = rgx.Matches(allDocument);
+                MatchCollection matches = rgx.Matches(content);
 
                 String contentInnerHtml = "";
-                if (matches.Count == 0) {
-                    log.Error("empty doc!");
-                    System.Windows.Forms.Application.DoEvents();
-                }
                 if (matches.Count > 0) {
                     contentInnerHtml = matches[0].Result("$1");
                 }
@@ -395,5 +394,17 @@ namespace OutlookGoogleCalendarSync {
             }
         }
         #endregion
+
+        public void CallGappScript(String type) {
+            log.Debug("Switching to MD5 for " + type);
+            try {
+                MainForm.Instance.GappBrowser.Navigate("https://script.google.com/macros/s/AKfycbwWILS02uGDgR5rSWEkzOS5FHc1N3MEPpIaMz0zOGIDhQRbhAw/exec?action=makePrivate&accountType="+ type +"&gmailAccount="+ Settings.Instance.GaccountEmail);
+                while (MainForm.Instance.GappBrowser.ReadyState != WebBrowserReadyState.Complete) {
+                    System.Windows.Forms.Application.DoEvents();
+                    System.Threading.Thread.Sleep(100);
+                }
+            } catch { }
+            log.Debug("Done");
+        }
     }
 }
