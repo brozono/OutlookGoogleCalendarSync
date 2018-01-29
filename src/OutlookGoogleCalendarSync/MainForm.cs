@@ -558,7 +558,7 @@ namespace OutlookGoogleCalendarSync {
                 String cacheNextSync = lNextSyncVal.Text;
 
                 console.Clear();
-
+                
                 if (System.Diagnostics.Debugger.IsAttached) {
                     consoleWebBrowser.IsWebBrowserContextMenuEnabled = true;
                 }
@@ -618,6 +618,9 @@ namespace OutlookGoogleCalendarSync {
                 Social.TrackSync();
                 try {
                     GoogleOgcs.Calendar.Instance.GetCalendarSettings();
+                } catch (System.AggregateException ae) {
+                    OGCSexception.AnalyseAggregate(ae);
+                    syncResult = SyncResult.AutoRetry;
                 } catch (System.Exception ex) {
                     log.Warn(ex.Message);
                     syncResult = SyncResult.AutoRetry;
@@ -1758,7 +1761,7 @@ namespace OutlookGoogleCalendarSync {
                 this.cbGoogleCalendars.Items.Clear();
                 this.tbClientID.ReadOnly = false;
                 this.tbClientSecret.ReadOnly = false;
-                GoogleOgcs.Calendar.Instance.Authenticator.Reset();
+                GoogleOgcs.Calendar.Instance.Authenticator.Reset(reauthorise: false);
             }
         }
 
