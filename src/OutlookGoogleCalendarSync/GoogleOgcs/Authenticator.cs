@@ -22,6 +22,8 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
         String tokenFullPath;
         Boolean tokenFileExists { get { return File.Exists(tokenFullPath); } }
 
+        public System.Threading.CancellationTokenSource CancelTokenSource;
+
         private Boolean checkedOgcsUserStatus = false;
         private static String hashedGmailAccount = null;
         public static String HashedGmailAccount {
@@ -35,17 +37,33 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
         }
 
         public Authenticator() {
+            CancelTokenSource = new System.Threading.CancellationTokenSource();
         }
 
         public void GetAuthenticated() {
             if (this.authenticated) return;
 
-            MainForm.Instance.Console.Update("Authenticating with Google...", verbose: true);
+            Forms.Main.Instance.Console.Update("Authenticating with Google...", verbose: true);
 
+            System.Threading.Thread oAuth = new System.Threading.Thread(() => { spawnOauth(); });
+            oAuth.Start();
+            while (oAuth.IsAlive) {
+                System.Windows.Forms.Application.DoEvents();
+                System.Threading.Thread.Sleep(100);
+            }
+        }
+
+        private void spawnOauth() {
             ClientSecrets cs = getCalendarClientSecrets();
             //Calling an async function from a static constructor needs to be called like this, else it deadlocks:-
             var task = System.Threading.Tasks.Task.Run(async () => { await getAuthenticated(cs); });
-            task.Wait();
+            try {
+                task.Wait(CancelTokenSource.Token);
+            } catch (System.OperationCanceledException) {
+                Forms.Main.Instance.Console.Update("Authorisation to allow OGCS to manage your Google calendar was cancelled.", Console.Markup.warning);
+            } catch (System.Exception ex) {
+                OGCSexception.Analyse(ex);
+            }
         }
 
         private static ClientSecrets getCalendarClientSecrets() {
@@ -92,9 +110,9 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
             UserCredential credential = null;
             try {
                 //This will open the authorisation process in a browser, if required
-                credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(cs, scopes, "user", System.Threading.CancellationToken.None, tokenStore);
-                if (!tokenFileExists)
-                    log.Debug("User has provided authentication code and credential file saved.");
+                credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(cs, scopes, "user", CancelTokenSource.Token, tokenStore);
+                if (tokenFileExists)
+                    log.Debug("User has provided authorisation and credential file saved.");
 
             } catch (Google.Apis.Auth.OAuth2.Responses.TokenResponseException ex) {
                 //OGCSexception.AnalyseTokenResponse(ex);
@@ -104,22 +122,22 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                     MessageBox.Show(noAuthGiven, "Authorisation not given", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     throw new ApplicationException(noAuthGiven);
                 } else {
-                    MainForm.Instance.Console.Update("Unable to authenticate with Google. The following error occurred:<br/>" + ex.Message, Console.Markup.error);
+                    Forms.Main.Instance.Console.Update("Unable to authenticate with Google. The following error occurred:<br/>" + ex.Message, Console.Markup.error);
                 }
 
             } catch (System.Exception ex) {
                 OGCSexception.Analyse(ex);
-                MainForm.Instance.Console.Update("Unable to authenticate with Google. The following error occurred:<br/>" + ex.Message, Console.Markup.error);
+                Forms.Main.Instance.Console.Update("Unable to authenticate with Google. The following error occurred:<br/>" + ex.Message, Console.Markup.error);
             }
 
             if (credential.Token.AccessToken != "" && credential.Token.RefreshToken != "") {
                 log.Info("Refresh and Access token successfully retrieved.");
-                log.Debug("Access token expires " + credential.Token.Issued.AddSeconds(credential.Token.ExpiresInSeconds.Value).ToLocalTime().ToString());
+                log.Debug("Access token expires " + credential.Token.IssuedUtc.AddSeconds(credential.Token.ExpiresInSeconds.Value).ToLocalTime().ToString());
             }
 
             GoogleOgcs.Calendar.Instance.Service = new CalendarService(new Google.Apis.Services.BaseClientService.Initializer() { HttpClientInitializer = credential });
 
-            if (credential.Token.Issued.AddSeconds(credential.Token.ExpiresInSeconds.Value) < DateTime.Now.AddMinutes(-1)) {
+            if (credential.Token.IssuedUtc.AddSeconds(credential.Token.ExpiresInSeconds.Value) < DateTime.Now.AddMinutes(-1)) {
                 log.Debug("Access token needs refreshing.");
                 //This will happen automatically when using the calendar service
                 //But we need a valid token before we call getGaccountEmail() which doesn't use the service
@@ -127,7 +145,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                     GoogleOgcs.Calendar.Instance.Service.Settings.Get("useKeyboardShortcuts").Execute();
                 } catch (System.Exception ex) {
                     OGCSexception.Analyse(ex);
-                    MainForm.Instance.Console.Update("Unable to communicate with Google services.", Console.Markup.warning);
+                    Forms.Main.Instance.Console.Update("Unable to communicate with Google services.", Console.Markup.warning);
                     authenticated = false;
                     return;
                 }
@@ -142,12 +160,14 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
             log.Info("Resetting Google Calendar authentication details.");
             Settings.Instance.AssignedClientIdentifier = "";
             authenticated = false;
-            GoogleOgcs.Calendar.Instance.Authenticator = null;
-            GoogleOgcs.Calendar.Instance.Service = null;
             if (tokenFileExists) File.Delete(tokenFullPath);
-            if (reauthorise) {
-                GoogleOgcs.Calendar.Instance.Authenticator = new Authenticator();
-                GoogleOgcs.Calendar.Instance.Authenticator.GetAuthenticated();
+            if (!GoogleOgcs.Calendar.IsInstanceNull) {
+                GoogleOgcs.Calendar.Instance.Authenticator = null;
+                GoogleOgcs.Calendar.Instance.Service = null;
+                if (reauthorise) {
+                    GoogleOgcs.Calendar.Instance.Authenticator = new Authenticator();
+                    GoogleOgcs.Calendar.Instance.Authenticator.GetAuthenticated();
+                }
             }
         }
 
@@ -204,8 +224,10 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                 }
                 OGCSexception.Analyse(ex);
                 if (ex.Message.ToLower().Contains("access denied")) {
-                    MainForm.Instance.Console.Update("Failed to obtain Calendar access from Google - it's possible your access has been revoked."
+                    Forms.Main.Instance.Console.Update("Failed to obtain Calendar access from Google - it's possible your access has been revoked."
                        + "<br/>Try disconnecting your Google account and reauthorising OGCS.", Console.Markup.error);
+                } else if (ex.Message.ToLower().Contains("prohibited") && Settings.Instance.UsingPersonalAPIkeys()) {
+                    Forms.Main.Instance.Console.Update("If you are using your own API keys, you must also enable the Google+ API.", Console.Markup.warning);
                 }
                 throw ex;
 
@@ -293,18 +315,18 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
             } else {
                 Boolean subscribed;
                 Event subscription = subscriptions.Last();
-                DateTime subscriptionStart = DateTime.Parse(subscription.Start.Date ?? subscription.Start.DateTime).Date;
+                DateTime subscriptionStart = (subscription.Start.DateTime ?? DateTime.Parse(subscription.Start.Date)).Date;
                 log.Debug("Last subscription date: " + subscriptionStart.ToString());
                 Double subscriptionRemaining = (subscriptionStart.AddYears(1) - DateTime.Now.Date).TotalDays;
                 if (subscriptionRemaining >= 0) {
                     if (subscriptionRemaining > 360)
-                        MainForm.Instance.syncNote(MainForm.SyncNotes.RecentSubscription, null);
+                        Forms.Main.Instance.SyncNote(Forms.Main.SyncNotes.RecentSubscription, null);
                     if (subscriptionRemaining < 28)
-                        MainForm.Instance.syncNote(MainForm.SyncNotes.SubscriptionPendingExpire, subscriptionStart.AddYears(1));
+                        Forms.Main.Instance.SyncNote(Forms.Main.SyncNotes.SubscriptionPendingExpire, subscriptionStart.AddYears(1));
                     subscribed = true;
                 } else {
                     if (subscriptionRemaining > -14)
-                        MainForm.Instance.syncNote(MainForm.SyncNotes.SubscriptionExpired, subscriptionStart.AddYears(1));
+                        Forms.Main.Instance.SyncNote(Forms.Main.SyncNotes.SubscriptionExpired, subscriptionStart.AddYears(1));
                     subscribed = false;
                 }
 
@@ -320,7 +342,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                 //Check for any unmigrated entries
                 if (subscriptions.Where(s => s.ExtendedProperties != null && s.ExtendedProperties.Shared != null
                     && s.ExtendedProperties.Shared.ContainsKey("migrated") && s.ExtendedProperties.Shared["migrated"] == "true").Count() < subscriptions.Count())
-                    MainForm.Instance.Console.CallGappScript("subscriber");
+                    Forms.Main.Instance.Console.CallGappScript("subscriber");
 
                 if (prevSubscriptionStart != Settings.Instance.Subscribed) {
                     if (prevSubscriptionStart == DateTime.Parse("01-Jan-2000")            //No longer a subscriber
@@ -386,11 +408,11 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
             } else {
                 log.Fine("User has kindly donated.");
                 Settings.Instance.Donor = true;
-                
+
                 //Check for any unmigrated entries
                 if (donations.Where(d => d.ExtendedProperties != null && d.ExtendedProperties.Shared != null
                     && d.ExtendedProperties.Shared.ContainsKey("migrated") && d.ExtendedProperties.Shared["migrated"] == "true").Count() < donations.Count())
-                    MainForm.Instance.Console.CallGappScript("donor");
+                    Forms.Main.Instance.Console.CallGappScript("donor");
 
                 return true;
             }

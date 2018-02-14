@@ -2,7 +2,6 @@
 using Squirrel;
 using System;
 using System.ComponentModel;
-using System.Deployment.Application;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -31,7 +30,7 @@ namespace OutlookGoogleCalendarSync {
         /// </summary>
         /// <param name="updateButton">The button that triggered this, if manually called.</param>
         public async void CheckForUpdate(Button updateButton = null) {
-            if (System.Diagnostics.Debugger.IsAttached) return;
+            if (string.IsNullOrEmpty(nonGitHubReleaseUri) && System.Diagnostics.Debugger.IsAttached) return;
 
             bt = updateButton;
             log.Debug((isManualCheck ? "Manual" : "Automatic") + " update check requested.");
@@ -40,7 +39,7 @@ namespace OutlookGoogleCalendarSync {
             Settings.Instance.Proxy.Configure();
 
             try {
-                if (Program.IsInstalled) {
+                if (!string.IsNullOrEmpty(nonGitHubReleaseUri) || Program.IsInstalled) {
                     try {
                        if (await githubCheck()) {
                            log.Info("Restarting OGCS.");
@@ -50,11 +49,11 @@ namespace OutlookGoogleCalendarSync {
                                OGCSexception.Analyse(ex, true);
                            }
                            try {
-                               MainForm.Instance.NotificationTray.ExitItem_Click(null, null);
+                               Forms.Main.Instance.NotificationTray.ExitItem_Click(null, null);
                            } catch (System.Exception ex) {
                                log.Error("Failed to exit via the notification tray icon. " + ex.Message);
-                               log.Debug("NotificationTray is " + (MainForm.Instance.NotificationTray == null ? "null" : "not null"));
-                               MainForm.Instance.Close();
+                               log.Debug("NotificationTray is " + (Forms.Main.Instance.NotificationTray == null ? "null" : "not null"));
+                               Forms.Main.Instance.Close();
                            }
                        }
                     } finally {
@@ -408,7 +407,7 @@ namespace OutlookGoogleCalendarSync {
 
         private void checkForZip_completed(object sender, RunWorkerCompletedEventArgs e) {
             if (isManualCheck)
-                MainForm.Instance.btCheckForUpdate.Text = "Check For Update";
+                Forms.Main.Instance.btCheckForUpdate.Text = "Check For Update";
         }
 
         private static MatchCollection getRelease(string source, string pattern) {

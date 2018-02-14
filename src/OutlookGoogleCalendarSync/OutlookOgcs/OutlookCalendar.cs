@@ -37,7 +37,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         }
         public static Boolean OOMsecurityInfo = false;
         public const String GlobalIdPattern = "040000008200E00074C5B7101A82E008";
-        public PushSyncTimer OgcsPushTimer;
+        public Sync.PushSyncTimer OgcsPushTimer;
         public MAPIFolder UseOutlookCalendar {
             get { return IOutlook.UseOutlookCalendar(); }
             set {
@@ -77,10 +77,10 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             log.Info("Registering for Outlook appointment change events...");
             if (eventHandlerHooks != 0) purgeOutlookEventHandlers();
 
-            if (Settings.Instance.SyncDirection != SyncDirection.GoogleToOutlook) {
+            if (Settings.Instance.SyncDirection != Sync.Direction.GoogleToOutlook) {
                 log.Debug("Create the timer for the push synchronisation");
                 if (OgcsPushTimer == null)
-                    OgcsPushTimer = new PushSyncTimer();
+                    OgcsPushTimer = new Sync.PushSyncTimer();
                 if (!OgcsPushTimer.Running())
                     OgcsPushTimer.Switch(true);
 
@@ -109,7 +109,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         }
 
         private void appointmentItem_Add(object Item) {
-            if (Settings.Instance.SyncDirection == SyncDirection.GoogleToOutlook) return;
+            if (Settings.Instance.SyncDirection == Sync.Direction.GoogleToOutlook) return;
 
             AppointmentItem ai = null;
             try {
@@ -133,7 +133,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             }
         }
         private void appointmentItem_Change(object Item) {
-            if (Settings.Instance.SyncDirection == SyncDirection.GoogleToOutlook) return;
+            if (Settings.Instance.SyncDirection == Sync.Direction.GoogleToOutlook) return;
 
             AppointmentItem ai = null;
             try {
@@ -157,7 +157,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             }
         }
         private void appointmentItem_Remove() {
-            if (Settings.Instance.SyncDirection == SyncDirection.GoogleToOutlook) return;
+            if (Settings.Instance.SyncDirection == Sync.Direction.GoogleToOutlook) return;
 
             try {
                 log.Debug("Detected Outlook item removed, so push sync flagged for Go.");
@@ -172,10 +172,6 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         public List<AppointmentItem> GetCalendarEntriesInRange(Boolean includeRecurrences = false) {
             List<AppointmentItem> filtered = new List<AppointmentItem>();
             filtered = FilterCalendarEntries(UseOutlookCalendar.Items, includeRecurrences:includeRecurrences);
-
-            if (Settings.Instance.CreateCSVFiles) {
-                ExportToCSV("Outputting all Appointments to CSV", "outlook_appointments.csv", filtered);
-            }
             return filtered;
         }
 
@@ -252,7 +248,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                 if (categoryFiltered > 0) {
                     log.Info(categoryFiltered + " Outlook items excluded due to active category filter.");
                     if (result.Count == 0)
-                        MainForm.Instance.Console.Update("Due to your category settings, all Outlook items have been filtered out!", Console.Markup.warning, notifyBubble: true);
+                        Forms.Main.Instance.Console.Update("Due to your category settings, all Outlook items have been filtered out!", Console.Markup.warning, notifyBubble: true);
                 }
             }
 
@@ -268,6 +264,8 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         #region Create
         public void CreateCalendarEntries(List<Event> events) {
             for (int g = 0; g < events.Count; g++) {
+                if (Sync.Engine.Instance.CancellationPending) return;
+
                 Event ev = events[g];
                 AppointmentItem newAi = IOutlook.UseOutlookCalendar().Items.Add() as AppointmentItem;
                 try {
@@ -277,10 +275,10 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                         String evSummary = "";
                         if (!Settings.Instance.VerboseOutput) evSummary = GoogleOgcs.Calendar.GetEventSummary(ev) + "<br/>";
                         if (ex.GetType() == typeof(ApplicationException)) {
-                            MainForm.Instance.Console.Update(evSummary + "Appointment creation skipped.", Console.Markup.warning);
+                            Forms.Main.Instance.Console.Update(evSummary + "Appointment creation skipped.", Console.Markup.warning);
                             continue;
                         } else {
-                            MainForm.Instance.Console.Update(evSummary + "Appointment creation failed.<br/>" + ex.Message, Console.Markup.error);
+                            Forms.Main.Instance.Console.Update(evSummary + "Appointment creation failed.<br/>" + ex.Message, Console.Markup.error);
                             log.Error(ex.StackTrace);
                             if (CalMessageBox.Instance.ShowTrue("Outlook appointment creation failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                                 continue;
@@ -295,7 +293,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                     } catch (System.Exception ex) {
                         String evSummary = "";
                         if (!Settings.Instance.VerboseOutput) evSummary = GoogleOgcs.Calendar.GetEventSummary(ev) + "<br/>";
-                        MainForm.Instance.Console.Update(evSummary + "New appointment failed to save.<br/>" + ex.Message, Console.Markup.error);
+                        Forms.Main.Instance.Console.Update(evSummary + "New appointment failed to save.<br/>" + ex.Message, Console.Markup.error);
                         log.Error(ex.StackTrace);
                         if (CalMessageBox.Instance.ShowTrue("New Outlook appointment failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                             continue;
@@ -304,9 +302,9 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                     }
 
                     if (ev.Recurrence != null && ev.RecurringEventId == null && Recurrence.Instance.HasExceptions(ev)) {
-                        MainForm.Instance.Console.Update("This is a recurring item with some exceptions:-", verbose: true);
+                        Forms.Main.Instance.Console.Update("This is a recurring item with some exceptions:-", verbose: true);
                         Recurrence.Instance.CreateOutlookExceptions(ref newAi, ev);
-                        MainForm.Instance.Console.Update("Recurring exceptions completed.", verbose: true);
+                        Forms.Main.Instance.Console.Update("Recurring exceptions completed.", verbose: true);
                     }
                 } finally {
                     newAi = (AppointmentItem)ReleaseObject(newAi);
@@ -317,7 +315,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         private void createCalendarEntry(Event ev, ref AppointmentItem ai) {
             string itemSummary = GoogleOgcs.Calendar.GetEventSummary(ev);
             log.Debug("Processing >> " + itemSummary);
-            MainForm.Instance.Console.Update(itemSummary, Console.Markup.calendar, verbose: true);
+            Forms.Main.Instance.Console.Update(itemSummary, Console.Markup.calendar, verbose: true);
 
             //Add the Google event IDs into Outlook appointment.
             AddGoogleIDs(ref ai, ev);
@@ -328,7 +326,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             ai = OutlookOgcs.Calendar.Instance.IOutlook.WindowsTimeZone_set(ai, ev);
             Recurrence.Instance.BuildOutlookPattern(ev, ai);
 
-            ai.Subject = Obfuscate.ApplyRegex(ev.Summary, SyncDirection.GoogleToOutlook);
+            ai.Subject = Obfuscate.ApplyRegex(ev.Summary, Sync.Direction.GoogleToOutlook);
             if (Settings.Instance.AddDescription && ev.Description != null) ai.Body = ev.Description;
             ai.Location = ev.Location;
             ai.Sensitivity = getPrivacy(ev.Visibility, null);
@@ -354,14 +352,14 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         }
 
         private static void createCalendarEntry_save(AppointmentItem ai, ref Event ev) {
-            if (Settings.Instance.SyncDirection == SyncDirection.Bidirectional) {
+            if (Settings.Instance.SyncDirection == Sync.Direction.Bidirectional) {
                 log.Debug("Saving timestamp when OGCS updated appointment.");
                 setOGCSlastModified(ref ai);
             }
 
             ai.Save();
 
-            if (Settings.Instance.SyncDirection == SyncDirection.Bidirectional || GoogleOgcs.Calendar.HasOgcsProperty(ev)) {
+            if (Settings.Instance.SyncDirection == Sync.Direction.Bidirectional || GoogleOgcs.Calendar.HasOgcsProperty(ev)) {
                 log.Debug("Storing the Outlook appointment IDs in Google event.");
                 GoogleOgcs.Calendar.AddOutlookIDs(ref ev, ai);
                 GoogleOgcs.Calendar.Instance.UpdateCalendarEntry_save(ref ev);
@@ -373,6 +371,8 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         public void UpdateCalendarEntries(Dictionary<AppointmentItem, Event> entriesToBeCompared, ref int entriesUpdated) {
             entriesUpdated = 0;
             foreach (KeyValuePair<AppointmentItem, Event> compare in entriesToBeCompared) {
+                if (Sync.Engine.Instance.CancellationPending) return;
+
                 int itemModified = 0;
                 AppointmentItem ai = compare.Key;
                 try {
@@ -383,7 +383,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                     } catch (System.Exception ex) {
                         String evSummary = "";
                         if (!Settings.Instance.VerboseOutput) evSummary = GoogleOgcs.Calendar.GetEventSummary(compare.Value) + "<br/>";
-                        MainForm.Instance.Console.Update(evSummary + "Appointment update failed.<br/>" + ex.Message, Console.Markup.error);
+                        Forms.Main.Instance.Console.Update(evSummary + "Appointment update failed.<br/>" + ex.Message, Console.Markup.error);
                         log.Error(ex.StackTrace);
                         if (CalMessageBox.Instance.ShowTrue("Outlook appointment update failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                             continue;
@@ -398,7 +398,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                         } catch (System.Exception ex) {
                             String evSummary = "";
                             if (!Settings.Instance.VerboseOutput) evSummary = GoogleOgcs.Calendar.GetEventSummary(compare.Value) + "<br/>";
-                            MainForm.Instance.Console.Update(evSummary + "Updated appointment failed to save.<br/>" + ex.Message, Console.Markup.error);
+                            Forms.Main.Instance.Console.Update(evSummary + "Updated appointment failed to save.<br/>" + ex.Message, Console.Markup.error);
                             log.Error(ex.StackTrace);
                             if (CalMessageBox.Instance.ShowTrue("Updated Outlook appointment failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                                 continue;
@@ -429,15 +429,15 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         }
 
         public Boolean UpdateCalendarEntry(ref AppointmentItem ai, Event ev, ref int itemModified, Boolean forceCompare = false) {
-            if (!(MainForm.Instance.ManualForceCompare || forceCompare)) { //Needed if the exception has just been created, but now needs updating
-                if (Settings.Instance.SyncDirection != SyncDirection.Bidirectional) {
-                    if (DateTime.Parse(GoogleOgcs.Calendar.GoogleTimeFrom(ai.LastModificationTime)) > DateTime.Parse(ev.Updated))
+            if (!(Sync.Engine.Instance.ManualForceCompare || forceCompare)) { //Needed if the exception has just been created, but now needs updating
+                if (Settings.Instance.SyncDirection != Sync.Direction.Bidirectional) {
+                    if (ai.LastModificationTime > ev.Updated)
                         return false;
                 } else {
-                    if (GoogleOgcs.Calendar.GetOGCSlastModified(ev).AddSeconds(5) >= DateTime.Parse(ev.Updated))
+                    if (GoogleOgcs.Calendar.GetOGCSlastModified(ev).AddSeconds(5) >= ev.Updated)
                         //Google last modified by OGCS
                         return false;
-                    if (DateTime.Parse(GoogleOgcs.Calendar.GoogleTimeFrom(ai.LastModificationTime)) > DateTime.Parse(ev.Updated))
+                    if (ai.LastModificationTime > ev.Updated)
                         return false;
                 }
             }
@@ -467,20 +467,16 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             IOutlook.WindowsTimeZone_get(ai, out currentStartTZ, out currentEndTZ);
             ai = OutlookOgcs.Calendar.Instance.IOutlook.WindowsTimeZone_set(ai, ev, onlyTZattribute: true);
             IOutlook.WindowsTimeZone_get(ai, out newStartTZ, out newEndTZ);
-            Boolean startTzChange = MainForm.CompareAttribute("Start Timezone", SyncDirection.GoogleToOutlook, newStartTZ, currentStartTZ, sb, ref itemModified);
-            Boolean endTzChange = MainForm.CompareAttribute("End Timezone", SyncDirection.GoogleToOutlook, newEndTZ, currentEndTZ, sb, ref itemModified);
+            Boolean startTzChange = Sync.Engine.CompareAttribute("Start Timezone", Sync.Direction.GoogleToOutlook, newStartTZ, currentStartTZ, sb, ref itemModified);
+            Boolean endTzChange = Sync.Engine.CompareAttribute("End Timezone", Sync.Direction.GoogleToOutlook, newEndTZ, currentEndTZ, sb, ref itemModified);
             #endregion
 
             #region Start/End & Recurrence
-            DateTime evStartParsedDate = DateTime.Parse(ev.Start.Date ?? ev.Start.DateTime);
-            Boolean startChange = MainForm.CompareAttribute("Start time", SyncDirection.GoogleToOutlook,
-                GoogleOgcs.Calendar.GoogleTimeFrom(evStartParsedDate),
-                GoogleOgcs.Calendar.GoogleTimeFrom(ai.Start), sb, ref itemModified);
+            DateTime evStartParsedDate = ev.Start.DateTime ?? DateTime.Parse(ev.Start.Date);
+            Boolean startChange = Sync.Engine.CompareAttribute("Start time", Sync.Direction.GoogleToOutlook, evStartParsedDate, ai.Start, sb, ref itemModified);
 
-            DateTime evEndParsedDate = DateTime.Parse(ev.End.Date ?? ev.End.DateTime);
-            Boolean endChange = MainForm.CompareAttribute("End time", SyncDirection.GoogleToOutlook,
-                GoogleOgcs.Calendar.GoogleTimeFrom(evEndParsedDate),
-                GoogleOgcs.Calendar.GoogleTimeFrom(ai.End), sb, ref itemModified);
+            DateTime evEndParsedDate = ev.End.DateTime ?? DateTime.Parse(ev.End.Date);
+            Boolean endChange = Sync.Engine.CompareAttribute("End time", Sync.Direction.GoogleToOutlook, evEndParsedDate, ai.End, sb, ref itemModified);
 
             RecurrencePattern oPattern = null;
             try {
@@ -513,7 +509,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                     oPattern = (ai.RecurrenceState == OlRecurrenceState.olApptMaster) ? ai.GetRecurrencePattern() : null;
                 if (oPattern != null) {
                     oPattern.Duration = Convert.ToInt32((evEndParsedDate - evStartParsedDate).TotalMinutes);
-                    Recurrence.Instance.CompareOutlookPattern(ev, ref oPattern, SyncDirection.GoogleToOutlook, sb, ref itemModified);
+                    Recurrence.Instance.CompareOutlookPattern(ev, ref oPattern, Sync.Direction.GoogleToOutlook, sb, ref itemModified);
                 }
             } finally {
                 oPattern = (RecurrencePattern)ReleaseObject(oPattern);
@@ -535,30 +531,30 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             }
             #endregion
 
-            String summaryObfuscated = Obfuscate.ApplyRegex(ev.Summary, SyncDirection.GoogleToOutlook);
-            if (MainForm.CompareAttribute("Subject", SyncDirection.GoogleToOutlook, summaryObfuscated, ai.Subject, sb, ref itemModified)) {
+            String summaryObfuscated = Obfuscate.ApplyRegex(ev.Summary, Sync.Direction.GoogleToOutlook);
+            if (Sync.Engine.CompareAttribute("Subject", Sync.Direction.GoogleToOutlook, summaryObfuscated, ai.Subject, sb, ref itemModified)) {
                 ai.Subject = summaryObfuscated;
             }
             if (Settings.Instance.AddDescription) {
-                if (Settings.Instance.SyncDirection == SyncDirection.GoogleToOutlook || !Settings.Instance.AddDescription_OnlyToGoogle) {
-                    if (MainForm.CompareAttribute("Description", SyncDirection.GoogleToOutlook, ev.Description, ai.Body, sb, ref itemModified))
+                if (Settings.Instance.SyncDirection == Sync.Direction.GoogleToOutlook || !Settings.Instance.AddDescription_OnlyToGoogle) {
+                    if (Sync.Engine.CompareAttribute("Description", Sync.Direction.GoogleToOutlook, ev.Description, ai.Body, sb, ref itemModified))
                         ai.Body = ev.Description;
                 }
             }
 
-            if (MainForm.CompareAttribute("Location", SyncDirection.GoogleToOutlook, ev.Location, ai.Location, sb, ref itemModified))
+            if (Sync.Engine.CompareAttribute("Location", Sync.Direction.GoogleToOutlook, ev.Location, ai.Location, sb, ref itemModified))
                 ai.Location = ev.Location;
 
             if (ai.RecurrenceState == OlRecurrenceState.olApptMaster ||
                 ai.RecurrenceState == OlRecurrenceState.olApptNotRecurring) 
             {
                 OlSensitivity gPrivacy = getPrivacy(ev.Visibility, ai.Sensitivity);
-                if (MainForm.CompareAttribute("Privacy", SyncDirection.GoogleToOutlook, gPrivacy.ToString(), ai.Sensitivity.ToString(), sb, ref itemModified)) {
+                if (Sync.Engine.CompareAttribute("Privacy", Sync.Direction.GoogleToOutlook, gPrivacy.ToString(), ai.Sensitivity.ToString(), sb, ref itemModified)) {
                     ai.Sensitivity = gPrivacy;
                 }
             }
             OlBusyStatus gFreeBusy = getAvailability(ev.Transparency ?? "opaque", ai.BusyStatus);
-            if (MainForm.CompareAttribute("Free/Busy", SyncDirection.GoogleToOutlook, gFreeBusy.ToString(), ai.BusyStatus.ToString(), sb, ref itemModified)) {
+            if (Sync.Engine.CompareAttribute("Free/Busy", Sync.Direction.GoogleToOutlook, gFreeBusy.ToString(), ai.BusyStatus.ToString(), sb, ref itemModified)) {
                 ai.BusyStatus = gFreeBusy;
             }
 
@@ -567,7 +563,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                 Recipients recipients = ai.Recipients;
                 List<EventAttendee> addAttendees = new List<EventAttendee>();
                 try {
-                    if (Settings.Instance.SyncDirection == SyncDirection.Bidirectional &&
+                    if (Settings.Instance.SyncDirection == Sync.Direction.Bidirectional &&
                         ev.Attendees != null && ev.Attendees.Count == 0 && recipients.Count > 150) {
                         log.Info("Attendees not being synced - there are too many (" + recipients.Count + ") for Google.");
                     } else {
@@ -593,8 +589,8 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                                         //Optional attendee
                                         bool oOptional = (ai.OptionalAttendees != null && ai.OptionalAttendees.Contains(attendee.DisplayName ?? attendee.Email));
                                         bool gOptional = (attendee.Optional == null) ? false : (bool)attendee.Optional;
-                                        if (MainForm.CompareAttribute("Recipient " + recipient.Name + " - Optional Check",
-                                            SyncDirection.GoogleToOutlook, gOptional, oOptional, sb, ref itemModified)) {
+                                        if (Sync.Engine.CompareAttribute("Recipient " + recipient.Name + " - Optional Check",
+                                            Sync.Direction.GoogleToOutlook, gOptional, oOptional, sb, ref itemModified)) {
                                             if (gOptional) {
                                                 recipient.Type = (int)OlMeetingRecipientType.olOptional;
                                             } else {
@@ -637,7 +633,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                         EventReminder reminder = ev.Reminders.Overrides[r];
                         if (reminder.Method == "popup") {
                             if (ai.ReminderSet) {
-                                if (MainForm.CompareAttribute("Reminder", SyncDirection.GoogleToOutlook, reminder.Minutes.ToString(), ai.ReminderMinutesBeforeStart.ToString(), sb, ref itemModified)) {
+                                if (Sync.Engine.CompareAttribute("Reminder", Sync.Direction.GoogleToOutlook, reminder.Minutes.ToString(), ai.ReminderMinutesBeforeStart.ToString(), sb, ref itemModified)) {
                                     ai.ReminderMinutesBeforeStart = (int)reminder.Minutes;
                                 }
                             } else {
@@ -659,15 +655,15 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             }
 
             if (itemModified > 0) {
-                MainForm.Instance.Console.FormatEventChanges(sb);
-                MainForm.Instance.Console.Update(itemModified + " attributes updated.", Console.Markup.appointmentEnd, verbose: true, newLine: false);
+                Forms.Main.Instance.Console.FormatEventChanges(sb);
+                Forms.Main.Instance.Console.Update(itemModified + " attributes updated.", Console.Markup.appointmentEnd, verbose: true, newLine: false);
                 System.Windows.Forms.Application.DoEvents();
             }
             return true;
         }
 
         private void updateCalendarEntry_save(ref AppointmentItem ai) {
-            if (Settings.Instance.SyncDirection == SyncDirection.Bidirectional) {
+            if (Settings.Instance.SyncDirection == Sync.Direction.Bidirectional) {
                 log.Debug("Saving timestamp when OGCS updated appointment.");
                 setOGCSlastModified(ref ai);
             }
@@ -679,6 +675,8 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         #region Delete
         public void DeleteCalendarEntries(List<AppointmentItem> oAppointments) {
             for (int o = oAppointments.Count - 1; o >= 0; o--) {
+                if (Sync.Engine.Instance.CancellationPending) return;
+
                 AppointmentItem ai = oAppointments[o];
                 Boolean doDelete = false;
                 try {
@@ -687,7 +685,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                     } catch (System.Exception ex) {
                         String evSummary = "";
                         if (!Settings.Instance.VerboseOutput) evSummary = OutlookOgcs.Calendar.GetEventSummary(ai) + "<br/>";
-                        MainForm.Instance.Console.Update(evSummary + "Appointment deletion failed.<br/>" + ex.Message, Console.Markup.error);
+                        Forms.Main.Instance.Console.Update(evSummary + "Appointment deletion failed.<br/>" + ex.Message, Console.Markup.error);
                         log.Error(ex.StackTrace);
                         if (MessageBox.Show("Outlook appointment deletion failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                             continue;
@@ -701,7 +699,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                     } catch (System.Exception ex) {
                         String evSummary = "";
                         if (!Settings.Instance.VerboseOutput) evSummary = OutlookOgcs.Calendar.GetEventSummary(ai) + "<br/>";
-                        MainForm.Instance.Console.Update(evSummary + "Deleted appointment failed to remove.<br/>" + ex.Message, Console.Markup.error);
+                        Forms.Main.Instance.Console.Update(evSummary + "Deleted appointment failed to remove.<br/>" + ex.Message, Console.Markup.error);
                         log.Error(ex.StackTrace);
                         if (CalMessageBox.Instance.ShowTrue("Deleted Outlook appointment failed to remove. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                             continue;
@@ -722,12 +720,12 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                 if (MessageBox.Show("Delete " + eventSummary + "?", "Deletion Confirmation",
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No) {
                     doDelete = false;
-                    MainForm.Instance.Console.Update("Not deleted: " + eventSummary, Console.Markup.calendar);
+                    Forms.Main.Instance.Console.Update("Not deleted: " + eventSummary, Console.Markup.calendar);
                 } else {
-                    MainForm.Instance.Console.Update("Deleted: " + eventSummary, Console.Markup.calendar);
+                    Forms.Main.Instance.Console.Update("Deleted: " + eventSummary, Console.Markup.calendar);
                 }
             } else {
-                MainForm.Instance.Console.Update(eventSummary, Console.Markup.calendar, verbose: true);
+                Forms.Main.Instance.Console.Update(eventSummary, Console.Markup.calendar, verbose: true);
             }
             return doDelete;
         }
@@ -763,7 +761,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                             AddGoogleIDs(ref ai, ev);
                             updateCalendarEntry_save(ref ai);
                             unclaimedAi.Remove(ai);
-                            MainForm.Instance.Console.Update("Reclaimed: " + GetEventSummary(ai), verbose: true);
+                            Forms.Main.Instance.Console.Update("Reclaimed: " + GetEventSummary(ai), verbose: true);
                             break;
                         }
                     }
@@ -771,13 +769,13 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             }
             log.Debug(unclaimedAi.Count + " unclaimed.");
             if (unclaimedAi.Count > 0 &&
-                (Settings.Instance.SyncDirection == SyncDirection.GoogleToOutlook ||
-                 Settings.Instance.SyncDirection == SyncDirection.Bidirectional))
+                (Settings.Instance.SyncDirection == Sync.Direction.GoogleToOutlook ||
+                 Settings.Instance.SyncDirection == Sync.Direction.Bidirectional))
             {
                 log.Info(unclaimedAi.Count + " unclaimed orphan appointments found.");
                 if (Settings.Instance.MergeItems || Settings.Instance.DisableDelete || Settings.Instance.ConfirmOnDelete) {
                     log.Info("These will be kept due to configuration settings.");
-                } else if (Settings.Instance.SyncDirection == SyncDirection.Bidirectional) {
+                } else if (Settings.Instance.SyncDirection == Sync.Direction.Bidirectional) {
                     log.Debug("These 'orphaned' items must not be deleted - they need syncing up.");
                 } else {
                     if (MessageBox.Show(unclaimedAi.Count + " Outlook calendar items can't be matched to Google.\r\n" +
@@ -821,10 +819,10 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             if (!Settings.Instance.SetEntriesPrivate)
                 return (gVisibility == "private") ? OlSensitivity.olPrivate : OlSensitivity.olNormal;
 
-            if (Settings.Instance.SyncDirection != SyncDirection.Bidirectional) {
+            if (Settings.Instance.SyncDirection != Sync.Direction.Bidirectional) {
                 return OlSensitivity.olPrivate;
             } else {
-                if (Settings.Instance.TargetCalendar == SyncDirection.OutlookToGoogle) { //Privacy enforcement is in other direction
+                if (Settings.Instance.TargetCalendar == Sync.Direction.OutlookToGoogle) { //Privacy enforcement is in other direction
                     if (oSensitivity == null)
                         return (gVisibility == "private") ? OlSensitivity.olPrivate : OlSensitivity.olNormal;
                     else if (oSensitivity == OlSensitivity.olPrivate && gVisibility != "private") {
@@ -850,10 +848,10 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             if (!Settings.Instance.SetEntriesAvailable)
                 return (gTransparency == "transparent") ? OlBusyStatus.olFree : OlBusyStatus.olBusy;
 
-            if (Settings.Instance.SyncDirection != SyncDirection.Bidirectional) {
+            if (Settings.Instance.SyncDirection != Sync.Direction.Bidirectional) {
                 return OlBusyStatus.olFree;
             } else {
-                if (Settings.Instance.TargetCalendar == SyncDirection.OutlookToGoogle) { //Availability enforcement is in other direction
+                if (Settings.Instance.TargetCalendar == Sync.Direction.OutlookToGoogle) { //Availability enforcement is in other direction
                     if (oBusyStatus == null)
                         return (gTransparency == "transparent") ? OlBusyStatus.olFree : OlBusyStatus.olBusy;
                     else if (oBusyStatus == OlBusyStatus.olFree && gTransparency != "transparent") {
@@ -1005,17 +1003,19 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         }
 
         public static string signature(AppointmentItem ai) {
-            return (ai.Subject + ";" + GoogleOgcs.Calendar.GoogleTimeFrom(ai.Start) + ";" + GoogleOgcs.Calendar.GoogleTimeFrom(ai.End)).Trim();
+            return (ai.Subject + ";" + ai.Start.ToPreciseString() + ";" + ai.End.ToPreciseString()).Trim();
         }
 
         public static void ExportToCSV(String action, String filename, List<AppointmentItem> ais) {
+            if (!Settings.Instance.CreateCSVFiles) return;
+
             log.Debug(action);
 
             TextWriter tw;
             try {
                 tw = new StreamWriter(Path.Combine(Program.UserFilePath, filename));
             } catch (System.Exception ex) {
-                MainForm.Instance.Console.Update("Failed to create CSV file '" + filename + "'.", Console.Markup.error);
+                Forms.Main.Instance.Console.Update("Failed to create CSV file '" + filename + "'.", Console.Markup.error);
                 log.Error("Error opening file '" + filename + "' for writing.");
                 OGCSexception.Analyse(ex);
                 return;
@@ -1030,12 +1030,12 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                     try {
                         tw.WriteLine(exportToCSV(ai));
                     } catch (System.Exception ex) {
-                        MainForm.Instance.Console.Update("Failed to output following Outlook appointment to CSV:-<br/>" + GetEventSummary(ai), Console.Markup.warning);
+                        Forms.Main.Instance.Console.Update("Failed to output following Outlook appointment to CSV:-<br/>" + GetEventSummary(ai), Console.Markup.warning);
                         OGCSexception.Analyse(ex);
                     }
                 }
             } catch (System.Exception ex) {
-                MainForm.Instance.Console.Update("Failed to output Outlook events to CSV.", Console.Markup.error);
+                Forms.Main.Instance.Console.Update("Failed to output Outlook events to CSV.", Console.Markup.error);
                 OGCSexception.Analyse(ex);
             } finally {
                 if (tw != null) tw.Close();
@@ -1045,8 +1045,8 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         private static string exportToCSV(AppointmentItem ai) {
             System.Text.StringBuilder csv = new System.Text.StringBuilder();
 
-            csv.Append(GoogleOgcs.Calendar.GoogleTimeFrom(ai.Start) + ",");
-            csv.Append(GoogleOgcs.Calendar.GoogleTimeFrom(ai.End) + ",");
+            csv.Append(ai.Start.ToPreciseString() + ",");
+            csv.Append(ai.End.ToPreciseString() + ",");
             csv.Append("\"" + ai.Subject + "\",");
 
             if (ai.Location == null) csv.Append(",");
@@ -1068,8 +1068,8 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             csv.Append(OutlookOgcs.Calendar.Instance.IOutlook.GetGlobalApptID(ai) + ",");
             csv.Append(ai.EntryID + "," + OutlookOgcs.Calendar.instance.UseOutlookCalendar.EntryID + ",");
             String googleIdValue;
-            GetOGCSproperty(ai, MetadataId.gEventID, out googleIdValue); csv.Append(googleIdValue ?? "" + ",");
-            GetOGCSproperty(ai, MetadataId.gCalendarId, out googleIdValue); csv.Append(googleIdValue ?? "" + ",");
+            GetOGCSproperty(ai, MetadataId.gEventID, out googleIdValue); csv.Append((googleIdValue ?? "") + ",");
+            GetOGCSproperty(ai, MetadataId.gCalendarId, out googleIdValue); csv.Append(googleIdValue ?? "");
 
             return csv.ToString();
         }
@@ -1138,10 +1138,10 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
 
             if (Settings.Instance.DisableDelete) {
                 if (outlook.Count > 0)
-                    MainForm.Instance.Console.Update(outlook.Count + " Outlook items would have been deleted, but you have deletions disabled.", Console.Markup.warning);
+                    Forms.Main.Instance.Console.Update(outlook.Count + " Outlook items would have been deleted, but you have deletions disabled.", Console.Markup.warning);
                 outlook = new List<AppointmentItem>();
             }
-            if (Settings.Instance.SyncDirection == SyncDirection.Bidirectional) {
+            if (Settings.Instance.SyncDirection == Sync.Direction.Bidirectional) {
                 //Don't recreate any items that have been deleted in Outlook
                 for (int g = google.Count - 1; g >= 0; g--) {
                     if (GoogleOgcs.Calendar.GetOGCSproperty(google[g], GoogleOgcs.Calendar.MetadataId.oEntryId))
@@ -1346,7 +1346,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         public static String GetOGCSEntryID(AppointmentItem ai) {
             String entryID = ai.EntryID;
 
-            if (Settings.Instance.SyncDirection == SyncDirection.OutlookToGoogleSimple) {
+            if (Settings.Instance.SyncDirection == Sync.Direction.OutlookToGoogleSimple) {
                 entryID += " " + ai.Start.ToShortDateString() + " " + ai.Start.ToShortTimeString();
                 entryID += " " + ai.End.ToShortDateString() + " " + ai.End.ToShortTimeString();
             }

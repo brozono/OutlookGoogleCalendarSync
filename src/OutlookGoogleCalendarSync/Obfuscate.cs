@@ -16,7 +16,7 @@ namespace OutlookGoogleCalendarSync {
         }
 
         [DataMember] public bool Enabled { get; set; }
-        [DataMember] public SyncDirection Direction { get; set; }
+        [DataMember] public Sync.Direction Direction { get; set; }
         private List<FindReplace> findReplace;
         
         [DataMember] public List<FindReplace> FindReplace {
@@ -36,7 +36,7 @@ namespace OutlookGoogleCalendarSync {
         
         private void setDefaults() {
             this.Enabled = false;
-            this.Direction = SyncDirection.OutlookToGoogle;
+            this.Direction = Sync.Direction.OutlookToGoogle;
             this.findReplace = new List<FindReplace>();
         }
 
@@ -68,10 +68,10 @@ namespace OutlookGoogleCalendarSync {
             data.CurrentCell = data.Rows[0].Cells[0];
         }
 
-        public static String ApplyRegex(String source, SyncDirection direction) {
+        public static String ApplyRegex(String source, Sync.Direction direction) {
             String retStr = source ?? "";
             if (Settings.Instance.Obfuscation.Enabled && direction.Id == Settings.Instance.Obfuscation.Direction.Id) {
-                foreach (DataGridViewRow row in MainForm.Instance.dgObfuscateRegex.Rows) {
+                foreach (DataGridViewRow row in Forms.Main.Instance.dgObfuscateRegex.Rows) {
                     DataGridViewCellCollection cells = row.Cells;
                     if (cells[Obfuscate.findCol].Value != null) {
                         System.Text.RegularExpressions.Regex rgx = new System.Text.RegularExpressions.Regex(
