@@ -11,10 +11,9 @@ namespace OutlookGoogleCalendarSync.Sync {
         [DataMember]
         public readonly int Id;
 
-        public static readonly Direction OutlookToGoogle = new Direction(1,         "Outlook → Google");
-        public static readonly Direction GoogleToOutlook = new Direction(2,         "Outlook ← Google");
-        public static readonly Direction OutlookToGoogleSimple = new Direction(3,   "Outlook → Google : Simple");
-        public static readonly Direction Bidirectional = new Direction(4,           "Outlook ↔ Google");
+        public static readonly Direction OutlookToGoogle = new Direction(1, "Outlook → Google");
+        public static readonly Direction GoogleToOutlook = new Direction(2, "Outlook ← Google");
+        public static readonly Direction Bidirectional = new Direction(3,   "Outlook ↔ Google");
 
         private Direction(int id, String name) {
             this.Name = name;

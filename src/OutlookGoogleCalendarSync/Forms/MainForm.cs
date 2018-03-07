@@ -255,10 +255,6 @@ namespace OutlookGoogleCalendarSync.Forms {
             syncDirection.Items.Add(Sync.Direction.Bidirectional);
             cbObfuscateDirection.Items.Add(Sync.Direction.OutlookToGoogle);
             cbObfuscateDirection.Items.Add(Sync.Direction.GoogleToOutlook);
-
-            syncDirection.Items.Add(Sync.Direction.OutlookToGoogleSimple);
-            cbObfuscateDirection.Items.Add(Sync.Direction.OutlookToGoogleSimple);
-
             //Sync Direction dropdown
             for (int i = 0; i < syncDirection.Items.Count; i++) {
                 Sync.Direction sd = (syncDirection.Items[i] as Sync.Direction);
@@ -360,6 +356,13 @@ namespace OutlookGoogleCalendarSync.Forms {
             cbEnableAutoRetry.Checked = Settings.Instance.EnableAutoRetry;
             tbNumberAttendees.Value = Settings.Instance.NumberAttendees;
             cbEnableAttendeeWarning.Checked = Settings.Instance.EnableAttendeeWarning;
+            if (Settings.Instance.SyncDirection != Sync.Direction.OutlookToGoogle) {
+                Settings.Instance.EnableUseRecurrence = true;
+                cbEnableUseRecurrence.Enabled = false;
+            }
+            else
+                cbEnableUseRecurrence.Enabled = true;
+            cbEnableUseRecurrence.Checked = Settings.Instance.EnableUseRecurrence;
             #endregion
             #region About
             int r = 0;
@@ -1105,6 +1108,12 @@ namespace OutlookGoogleCalendarSync.Forms {
                 this.lDNDand.Visible = true;
                 cbAddReminders_CheckedChanged(null, null);
             }
+            if (Settings.Instance.SyncDirection != Sync.Direction.OutlookToGoogle) {
+                Settings.Instance.EnableUseRecurrence = true;
+                cbEnableUseRecurrence.Enabled = false;
+            }
+            else
+                cbEnableUseRecurrence.Enabled = true;
             cbAddAttendees_CheckedChanged(null, null);
             showWhatPostit("Description");
         }
@@ -1439,12 +1448,19 @@ namespace OutlookGoogleCalendarSync.Forms {
         {
             Settings.Instance.EnableAutoRetry = cbEnableAutoRetry.Checked;
         }
+
         private void cbEnableAttendeeWarning_CheckedChanged(object sender, EventArgs e) {
             Settings.Instance.EnableAttendeeWarning = cbEnableAttendeeWarning.Checked;
         }
+
         private void tbNumberAttendees_ValueChanged(object sender, EventArgs e)
         {
             Settings.Instance.NumberAttendees = (int)tbNumberAttendees.Value;
+        }
+
+        private void cbEnableUseRecurrence_CheckedChanged(object sender, EventArgs e)
+        {
+            Settings.Instance.EnableUseRecurrence = cbEnableUseRecurrence.Checked;
         }
         #endregion
 

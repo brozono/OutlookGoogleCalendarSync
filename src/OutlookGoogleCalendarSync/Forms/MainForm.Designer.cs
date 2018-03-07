@@ -179,6 +179,8 @@
             this.tbNumberAttendees = new System.Windows.Forms.NumericUpDown();
             this.gbAutoRetryErrors = new System.Windows.Forms.GroupBox();
             this.cbEnableAutoRetry = new System.Windows.Forms.CheckBox();
+            this.gbUseRecurrence = new System.Windows.Forms.GroupBox();
+            this.cbEnableUseRecurrence = new System.Windows.Forms.CheckBox();
             this.bSave = new System.Windows.Forms.Button();
             this.tabPage_Help = new System.Windows.Forms.TabPage();
             this.tbTS2 = new System.Windows.Forms.TextBox();
@@ -256,6 +258,7 @@
             this.gbSyncOptions_Dev.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).BeginInit();
             this.gbAutoRetryErrors.SuspendLayout();
+            this.gbUseRecurrence.SuspendLayout();
             this.tabPage_Help.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.tabPage_About.SuspendLayout();
@@ -2005,6 +2008,7 @@
             // tabDevOptions
             // 
             this.tabDevOptions.BackColor = System.Drawing.Color.White;
+            this.tabDevOptions.Controls.Add(this.gbUseRecurrence);
             this.tabDevOptions.Controls.Add(this.gbSyncOptions_Dev);
             this.tabDevOptions.Controls.Add(this.gbAutoRetryErrors);
             this.tabDevOptions.Location = new System.Drawing.Point(79, 4);
@@ -2096,6 +2100,31 @@
             this.cbEnableAutoRetry.Text = "Enable Auto Retry";
             this.cbEnableAutoRetry.UseVisualStyleBackColor = true;
             this.cbEnableAutoRetry.CheckedChanged += new System.EventHandler(this.cbEnableAutoRetry_CheckedChanged);
+            // 
+            // gbUseRecurrence
+            // 
+            this.gbUseRecurrence.Controls.Add(this.cbEnableUseRecurrence);
+            this.gbUseRecurrence.Font = new System.Drawing.Font("Arial Black", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.gbUseRecurrence.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.gbUseRecurrence.Location = new System.Drawing.Point(12, 161);
+            this.gbUseRecurrence.Name = "gbUseRecurrence";
+            this.gbUseRecurrence.Size = new System.Drawing.Size(369, 49);
+            this.gbUseRecurrence.TabIndex = 3;
+            this.gbUseRecurrence.TabStop = false;
+            this.gbUseRecurrence.Text = "Use Recurrence";
+            // 
+            // cbEnableUseRecurrence
+            // 
+            this.cbEnableUseRecurrence.AutoSize = true;
+            this.cbEnableUseRecurrence.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cbEnableUseRecurrence.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.cbEnableUseRecurrence.Location = new System.Drawing.Point(18, 21);
+            this.cbEnableUseRecurrence.Name = "cbEnableUseRecurrence";
+            this.cbEnableUseRecurrence.Size = new System.Drawing.Size(140, 17);
+            this.cbEnableUseRecurrence.TabIndex = 0;
+            this.cbEnableUseRecurrence.Text = "Enable Use Recurrence";
+            this.cbEnableUseRecurrence.UseVisualStyleBackColor = true;
+            this.cbEnableUseRecurrence.CheckedChanged += new System.EventHandler(this.cbEnableUseRecurrence_CheckedChanged);
             // 
             // bSave
             // 
@@ -2799,6 +2828,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.tbNumberAttendees)).EndInit();
             this.gbAutoRetryErrors.ResumeLayout(false);
             this.gbAutoRetryErrors.PerformLayout();
+            this.gbUseRecurrence.ResumeLayout(false);
+            this.gbUseRecurrence.PerformLayout();
             this.tabPage_Help.ResumeLayout(false);
             this.tabPage_Help.PerformLayout();
             this.tableLayoutPanel1.ResumeLayout(false);
@@ -3005,5 +3036,7 @@
         private System.Windows.Forms.Label lNumberAttendees;
         private System.Windows.Forms.NumericUpDown tbNumberAttendees;
         private System.Windows.Forms.CheckBox cbEnableAttendeeWarning;
+        private System.Windows.Forms.GroupBox gbUseRecurrence;
+        private System.Windows.Forms.CheckBox cbEnableUseRecurrence;
     }
 }

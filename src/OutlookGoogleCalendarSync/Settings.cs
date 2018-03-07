@@ -101,6 +101,7 @@ namespace OutlookGoogleCalendarSync {
             EnableAutoRetry = false;
             EnableAttendeeWarning = false;
             NumberAttendees = 200;
+            EnableUseRecurrence = true;
             
             lastSyncDate = new DateTime(0);
             completedSyncs = 0;
@@ -258,6 +259,7 @@ namespace OutlookGoogleCalendarSync {
         [DataMember] public bool EnableAutoRetry { get; set; }
         [DataMember] public bool EnableAttendeeWarning { get; set; }
         [DataMember] public int NumberAttendees { get; set; }
+        [DataMember] public bool EnableUseRecurrence { get; set; }
         #endregion
         #region About
         [DataMember] public string Version {
@@ -432,6 +434,7 @@ namespace OutlookGoogleCalendarSync {
             log.Info("DEVELOPER OPTIONS:-");
             log.Info("  Enable Retry: " + EnableAutoRetry);
             log.Info("  Enable Attendee Warning: " + EnableAttendeeWarning);
+            log.Info("  Enable Use Recurrence: " + EnableUseRecurrence); 
 
             log.Info("ABOUT:-");
             log.Info("  Alpha Releases: " + alphaReleases);

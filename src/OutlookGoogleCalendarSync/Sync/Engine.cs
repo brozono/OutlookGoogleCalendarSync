@@ -308,17 +308,7 @@ namespace OutlookGoogleCalendarSync.Sync {
                 #region Read Outlook items
                 console.Update("Scanning Outlook calendar...");
                 try {
-
-                    if (Settings.Instance.SyncDirection == Sync.Direction.OutlookToGoogleSimple) {
-                        outlookEntries = OutlookOgcs.Calendar.Instance.GetCalendarEntriesInRange(includeRecurrences: true);
-                        goto SkipGettingOutlookEntries;
-                    }
-
                     outlookEntries = OutlookOgcs.Calendar.Instance.GetCalendarEntriesInRange();
-
-                    SkipGettingOutlookEntries:
-                        log.Debug("Got all Outlook entries in range including recurring entries");
-
                 } catch (System.Runtime.InteropServices.InvalidComObjectException ex) {
                     if (OGCSexception.GetErrorCode(ex) == "0x80131527") { //COM object separated from underlying RCW
                         log.Warn(ex.Message);
@@ -343,23 +333,7 @@ namespace OutlookGoogleCalendarSync.Sync {
                 #region Read Google items
                 console.Update("Scanning Google calendar...");
                 try {
-
-                    if (Settings.Instance.SyncDirection == Sync.Direction.OutlookToGoogleSimple) {
-                        googleEntries = GoogleOgcs.Calendar.Instance.GetCalendarEntriesInRange(Settings.Instance.SyncStart.AddMonths(-36),
-                                                                                      Settings.Instance.SyncEnd.AddMonths(36));
-                        for (int i = googleEntries.Count - 1; i >= 0; i--)
-                        {
-                            if (googleEntries[i].Status == "cancelled")
-                                googleEntries.RemoveAt(i);
-                        }
-                        goto SkipGettingGoogleEntries;
-                    }
-                    
                     googleEntries = GoogleOgcs.Calendar.Instance.GetCalendarEntriesInRange();
-
-                    SkipGettingGoogleEntries:
-                        log.Debug("Got +/-3 year range of Google entries");
-
                 } catch (AggregateException agex) {
                     OGCSexception.AnalyseAggregate(agex);
                 } catch (Google.Apis.Auth.OAuth2.Responses.TokenResponseException ex) {
@@ -392,10 +366,6 @@ namespace OutlookGoogleCalendarSync.Sync {
                 #endregion
 
                 #region Normalise recurring items in sync window
-
-                if (Settings.Instance.SyncDirection == Sync.Direction.OutlookToGoogleSimple)
-                    goto SkipNormalizeItemsInSyncWindow;     
-
                 console.Update("Total inc. recurring items spanning sync date range...");
                 //Outlook returns recurring items that span the sync date range, Google doesn't
                 //So check for master Outlook items occurring before sync date range, and retrieve Google equivalent
@@ -408,10 +378,10 @@ namespace OutlookGoogleCalendarSync.Sync {
                             log.Info("Calendar object appears to be a MeetingItem, so retrieving associated AppointmentItem.");
                             MeetingItem mi = outlookEntries[o] as MeetingItem;
                             outlookEntries[o] = mi.GetAssociatedAppointment(false);
-                        ai = outlookEntries[o];
-                    } else {
-                        log.Warn("Unknown calendar object type - cannot sync it.");
-                        skipCorruptedItem(ref outlookEntries, outlookEntries[o], "Unknown object type.");
+                            ai = outlookEntries[o];
+                        } else {
+                            log.Warn("Unknown calendar object type - cannot sync it.");
+                            skipCorruptedItem(ref outlookEntries, outlookEntries[o], "Unknown object type.");
                             outlookEntries[o] = (AppointmentItem)OutlookOgcs.Calendar.ReleaseObject(outlookEntries[o]);
                             continue;
                         }
@@ -439,7 +409,8 @@ namespace OutlookGoogleCalendarSync.Sync {
                         continue;
                     }
 
-                    if (ai.IsRecurring && ai.Start.Date < Settings.Instance.SyncStart && ai.End.Date < Settings.Instance.SyncStart) {
+                    if (Settings.Instance.EnableUseRecurrence &&
+                        ai.IsRecurring && ai.Start.Date < Settings.Instance.SyncStart && ai.End.Date < Settings.Instance.SyncStart) {
                         //We won't bother getting Google master event if appointment is yearly reoccurring in a month outside of sync range
                         //Otherwise, every sync, the master event will have to be retrieved, compared, concluded nothing's changed (probably) = waste of API calls
                         RecurrencePattern oPattern = ai.GetRecurrencePattern();
@@ -478,16 +449,14 @@ namespace OutlookGoogleCalendarSync.Sync {
                             oPattern = (RecurrencePattern)OutlookOgcs.Calendar.ReleaseObject(oPattern);
                         }
                     }
-                    //Completely dereference object and retrieve afresh (due to GetRecurrencePattern earlier) 
-                    ai = (AppointmentItem)OutlookOgcs.Calendar.ReleaseObject(ai);
-                    OutlookOgcs.Calendar.Instance.IOutlook.GetAppointmentByID(entryID, out ai);
-                    outlookEntries[o] = ai;
+                    if (Settings.Instance.EnableUseRecurrence) {
+                        //Completely dereference object and retrieve afresh (due to GetRecurrencePattern earlier) 
+                        ai = (AppointmentItem)OutlookOgcs.Calendar.ReleaseObject(ai);
+                        OutlookOgcs.Calendar.Instance.IOutlook.GetAppointmentByID(entryID, out ai);
+                        outlookEntries[o] = ai;
+                    }
                 }
                 console.Update("Outlook " + outlookEntries.Count + ", Google " + googleEntries.Count);
-
-                SkipNormalizeItemsInSyncWindow:
-                    log.Debug("Skipped Normalizing recurring items in sync window for Outlook -> Google : Simple sync");
-
 
                 GoogleOgcs.Calendar.ExportToCSV("Outputting all Events to CSV", "google_events.csv", googleEntries);
                 OutlookOgcs.Calendar.ExportToCSV("Outputting all Appointments to CSV", "outlook_appointments.csv", outlookEntries);
@@ -501,18 +470,11 @@ namespace OutlookGoogleCalendarSync.Sync {
                     if (CancellationPending) return SyncResult.UserCancelled;
                 }
                 if (!success) return SyncResult.Fail;
-
-                if (Settings.Instance.SyncDirection == Sync.Direction.OutlookToGoogleSimple)
-                    goto SkipGoogleToOutlookSync;
-
                 if (Settings.Instance.SyncDirection != Direction.OutlookToGoogle) {
                     if (bubbleText != "") bubbleText += "\r\n";
                     success = googleToOutlook(googleEntries, outlookEntries, ref bubbleText);
                     if (CancellationPending) return SyncResult.UserCancelled;
                 }
-
-                SkipGoogleToOutlookSync:
-
                 if (bubbleText != "") Forms.Main.Instance.NotificationTray.ShowBubbleInfo(bubbleText);
 
                 return SyncResult.OK;
@@ -589,17 +551,7 @@ namespace OutlookGoogleCalendarSync.Sync {
                 if (googleEntriesToBeCreated.Count > 0) {
                     console.Update("Creating " + googleEntriesToBeCreated.Count + " Google calendar entries", Console.Markup.h2, newLine: false);
                     try {
-
-                        if (Settings.Instance.SyncDirection == Sync.Direction.OutlookToGoogleSimple) {
-                            GoogleOgcs.Calendar.Instance.CreateCalendarEntries(googleEntriesToBeCreated, ignoreRecurring: true);
-                            goto ignoreRecurringOnCreate;
-                        }
-
                         GoogleOgcs.Calendar.Instance.CreateCalendarEntries(googleEntriesToBeCreated);
-
-                        ignoreRecurringOnCreate:
-                            log.Debug("Ignored creating recurring event details for Outlook -> Google : Simple sync");
-
                     } catch (UserCancelledSyncException ex) {
                         log.Info(ex.Message);
                         return false;
@@ -617,17 +569,7 @@ namespace OutlookGoogleCalendarSync.Sync {
                 if (entriesToBeCompared.Count > 0) {
                     console.Update("Comparing " + entriesToBeCompared.Count + " existing Google calendar entries", Console.Markup.h2, newLine: false);
                     try {
-
-                        if (Settings.Instance.SyncDirection == Sync.Direction.OutlookToGoogleSimple) {
-                            GoogleOgcs.Calendar.Instance.UpdateCalendarEntries(entriesToBeCompared, ref entriesUpdated, ignoreRecurring: true);
-                            goto ignoreRecurringOnUpdate;
-                        }
-
                         GoogleOgcs.Calendar.Instance.UpdateCalendarEntries(entriesToBeCompared, ref entriesUpdated);
-
-                        ignoreRecurringOnUpdate:
-                            log.Debug("Ignored updating recurring event details for Outlook -> Google : Simple sync");
-
                     } catch (UserCancelledSyncException ex) {
                         log.Info(ex.Message);
                         return false;

@@ -169,13 +169,13 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         }
         #endregion
 
-        public List<AppointmentItem> GetCalendarEntriesInRange(Boolean includeRecurrences = false) {
+        public List<AppointmentItem> GetCalendarEntriesInRange() {
             List<AppointmentItem> filtered = new List<AppointmentItem>();
-            filtered = FilterCalendarEntries(UseOutlookCalendar.Items, includeRecurrences:includeRecurrences);
+            filtered = FilterCalendarEntries(UseOutlookCalendar.Items);
             return filtered;
         }
 
-        public List<AppointmentItem> FilterCalendarEntries(Items OutlookItems, Boolean filterCategories = true, Boolean noDateFilter = false, String extraFilter = "", Boolean includeRecurrences = false) {
+        public List<AppointmentItem> FilterCalendarEntries(Items OutlookItems, Boolean filterCategories = true, Boolean noDateFilter = false, String extraFilter = "") {
             //Filtering info @ https://msdn.microsoft.com/en-us/library/cc513841%28v=office.12%29.aspx
 
             List<AppointmentItem> result = new List<AppointmentItem>();
@@ -185,7 +185,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                 //OutlookItems.Sort("[Start]", Type.Missing);
                 OutlookItems.IncludeRecurrences = false;
 
-                if (includeRecurrences) {
+                if (!Settings.Instance.EnableUseRecurrence) {
                     OutlookItems.Sort("[Start]", Type.Missing);
                     OutlookItems.IncludeRecurrences = true;
                 }
@@ -251,12 +251,6 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                         Forms.Main.Instance.Console.Update("Due to your category settings, all Outlook items have been filtered out!", Console.Markup.warning, notifyBubble: true);
                 }
             }
-
-            if (includeRecurrences) {
-                log.Fine("Found " + result.Count + " Outlook Events over the range.");
-                return result;
-            }
-
             log.Fine("Filtered down to " + result.Count);
             return result;
         }
@@ -1078,10 +1072,10 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             String eventSummary = "";
             try {
                 if (ai.AllDayEvent) {
-                    // log.Fine("GetSummary - all day event");
+                    log.Fine("GetSummary - all day event");
                     eventSummary += ai.Start.Date.ToShortDateString();
                 } else {
-                    // log.Fine("GetSummary - not all day event");
+                    log.Fine("GetSummary - not all day event");
                     eventSummary += ai.Start.ToShortDateString() + " " + ai.Start.ToShortTimeString();
                 }
                 eventSummary += " " + (ai.IsRecurring ? "(R) " : "") + "=> ";
@@ -1346,7 +1340,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         public static String GetOGCSEntryID(AppointmentItem ai) {
             String entryID = ai.EntryID;
 
-            if (Settings.Instance.SyncDirection == Sync.Direction.OutlookToGoogleSimple) {
+            if (!Settings.Instance.EnableUseRecurrence) {
                 entryID += " " + ai.Start.ToShortDateString() + " " + ai.Start.ToShortTimeString();
                 entryID += " " + ai.End.ToShortDateString() + " " + ai.End.ToShortTimeString();
             }

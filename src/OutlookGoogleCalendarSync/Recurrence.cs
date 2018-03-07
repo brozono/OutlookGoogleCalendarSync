@@ -26,6 +26,7 @@ namespace OutlookGoogleCalendarSync {
         #region iCalendar Functions
         private Dictionary<String, String> rrule = new Dictionary<String, String>();
         public List<String> BuildGooglePattern(AppointmentItem ai, Event ev) {
+            if (!Settings.Instance.EnableUseRecurrence) return null;
             if (!ai.IsRecurring || ai.RecurrenceState != OlRecurrenceState.olApptMaster) return null;
 
             log.Debug("Creating Google iCalendar definition for recurring event.");
@@ -541,7 +542,8 @@ namespace OutlookGoogleCalendarSync {
         }
 
         public static void UpdateGoogleExceptions(AppointmentItem ai, Event ev, Boolean dirtyCache) {
-            if (ai.IsRecurring) {
+            if (Settings.Instance.EnableUseRecurrence &&
+                ai.IsRecurring) {
                 RecurrencePattern rp = null;
                 Exceptions excps = null;
                 try {

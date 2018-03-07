@@ -201,7 +201,11 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
         }
 
         public List<Event> GetCalendarEntriesInRange() {
-            return GetCalendarEntriesInRange(Settings.Instance.SyncStart, Settings.Instance.SyncEnd);
+            if (!Settings.Instance.EnableUseRecurrence)
+                return GetCalendarEntriesInRange(Settings.Instance.SyncStart.AddMonths(-36),
+                                                 Settings.Instance.SyncEnd.AddMonths(36));
+            else
+                return GetCalendarEntriesInRange(Settings.Instance.SyncStart, Settings.Instance.SyncEnd);
         }
 
         public List<Event> GetCalendarEntriesInRange(DateTime from, DateTime to) {
@@ -267,13 +271,13 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
         }
 
         #region Create
-        public void CreateCalendarEntries(List<AppointmentItem> appointments, Boolean ignoreRecurring = false) {
+        public void CreateCalendarEntries(List<AppointmentItem> appointments) {
             foreach (AppointmentItem ai in appointments) {
                 if (Sync.Engine.Instance.CancellationPending) return;
 
                 Event newEvent = new Event();
                 try {
-                    newEvent = createCalendarEntry(ai, ignoreRecurring);
+                    newEvent = createCalendarEntry(ai);
                 } catch (System.Exception ex) {
                     String aiSummary = "";
                     if (!Settings.Instance.VerboseOutput) aiSummary = OutlookOgcs.Calendar.GetEventSummary(ai) + "<br/>";
@@ -303,23 +307,16 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                     else
                         throw new UserCancelledSyncException("User chose not to continue sync.");
                 }
-
-                if (ignoreRecurring)
-                    goto SkipRecurring;
-
-                if (ai.IsRecurring && Recurrence.HasExceptions(ai) && createdEvent != null) {
+                if (Settings.Instance.EnableUseRecurrence &&
+                    ai.IsRecurring && Recurrence.HasExceptions(ai) && createdEvent != null) {
                     Forms.Main.Instance.Console.Update("This is a recurring item with some exceptions:-", verbose: true);
                     Recurrence.CreateGoogleExceptions(ai, createdEvent.Id);
                     Forms.Main.Instance.Console.Update("Recurring exceptions completed.", verbose: true);
                 }
-
-                SkipRecurring:
-                    log.Debug("Skipped recurring check in CreateCalendarEntries");
-
             }
         }
 
-        private Event createCalendarEntry(AppointmentItem ai, Boolean ignoreRecurring) {
+        private Event createCalendarEntry(AppointmentItem ai) {
             string itemSummary = OutlookOgcs.Calendar.GetEventSummary(ai);
             log.Debug("Processing >> " + itemSummary);
             Forms.Main.Instance.Console.Update(itemSummary, Console.Markup.calendar, verbose: true);
@@ -328,14 +325,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
             //Add the Outlook appointment ID into Google event
             AddOutlookIDs(ref ev, ai);
 
-            if (ignoreRecurring)
-                goto SkipRecurring;
-
             ev.Recurrence = Recurrence.Instance.BuildGooglePattern(ai, ev);
-
-            SkipRecurring:
-                log.Debug("Skipped recurring check in createCalendarEntry");
-
             ev.Start = new EventDateTime();
             ev.End = new EventDateTime();
 
@@ -460,7 +450,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
         #endregion
 
         #region Update
-        public void UpdateCalendarEntries(Dictionary<AppointmentItem, Event> entriesToBeCompared, ref int entriesUpdated, Boolean ignoreRecurring = false) {
+        public void UpdateCalendarEntries(Dictionary<AppointmentItem, Event> entriesToBeCompared, ref int entriesUpdated) {
             entriesUpdated = 0;
             for (int i = 0; i < entriesToBeCompared.Count; i++) {
                 if (Sync.Engine.Instance.CancellationPending) return;
@@ -470,7 +460,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                 Boolean eventExceptionCacheDirty = false;
                 Event ev = new Event();
                 try {
-                    ev = UpdateCalendarEntry(compare.Key, compare.Value, ref itemModified, ignoreRecurring);
+                    ev = UpdateCalendarEntry(compare.Key, compare.Value, ref itemModified);
                 } catch (System.Exception ex) {
                     String aiSummary = "";
                     if (!Settings.Instance.VerboseOutput) aiSummary = OutlookOgcs.Calendar.GetEventSummary(compare.Key) + "<br/>";
@@ -505,9 +495,6 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
 
                 }
 
-                if (ignoreRecurring)
-                    goto SkipRecurring;
-
                 //Have to do this *before* any dummy update, else all the exceptions inherit the updated timestamp of the parent recurring event
                 Recurrence.UpdateGoogleExceptions(compare.Key, ev ?? compare.Value, eventExceptionCacheDirty);
 
@@ -531,14 +518,10 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                             throw new UserCancelledSyncException("User chose not to continue sync.");
                     }
                 }
-
-                SkipRecurring:
-                    log.Debug("Skipped recurring check in UpdateCalendarEntries");
-
             }
         }
 
-        public Event UpdateCalendarEntry(AppointmentItem ai, Event ev, ref int itemModified, Boolean forceCompare = false, Boolean ignoreRecurring = false) {
+        public Event UpdateCalendarEntry(AppointmentItem ai, Event ev, ref int itemModified, Boolean forceCompare = false) {
             if (!Settings.Instance.APIlimit_inEffect && GetOGCSproperty(ev, MetadataId.apiLimitHit)) {
                 log.Fine("Back processing Event affected by attendee API limit.");
             } else {
@@ -592,9 +575,6 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                 }
             }
 
-            if (ignoreRecurring)
-                goto SkipRecurring;
-
             List<String> oRrules = Recurrence.Instance.BuildGooglePattern(ai, ev);
             if (ev.Recurrence != null) {
                 for (int r = 0; r < ev.Recurrence.Count; r++) {
@@ -625,9 +605,6 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                 }
             }
 
-            SkipRecurring:
-                log.Debug("Skipped recurring check in UpdateCalendarEntry");
-            
             //TimeZone
             if (ev.Start.DateTime != null) {
                 String currentStartTZ = ev.Start.TimeZone;
@@ -1561,7 +1538,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                 ev.ExtendedProperties.Private__.ContainsKey(key)) {
                 value = ev.ExtendedProperties.Private__[key];
 
-                if (id == MetadataId.oEntryId && Settings.Instance.SyncDirection == Sync.Direction.OutlookToGoogleSimple) {
+                if (id == MetadataId.oEntryId && !Settings.Instance.EnableUseRecurrence) {
                     DateTime gDate;
                     if (ev.Start.DateTime != null)
                         gDate = DateTime.Parse(ev.Start.DateTime.ToString());                        
