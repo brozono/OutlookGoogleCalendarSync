@@ -230,6 +230,7 @@
             this.pbSocialTwitterFollow = new System.Windows.Forms.PictureBox();
             this.label2 = new System.Windows.Forms.Label();
             this.trayIcon = new System.Windows.Forms.NotifyIcon(this.components);
+            this.cbOnlyRespondedInvites = new System.Windows.Forms.CheckBox();
             this.tabApp.SuspendLayout();
             this.tabPage_Sync.SuspendLayout();
             this.consolePanel.SuspendLayout();
@@ -490,8 +491,9 @@
             this.tabOutlook.Controls.Add(this.lOutlookCalendar);
             this.tabOutlook.Controls.Add(this.rbOutlookDefaultMB);
             this.tabOutlook.Controls.Add(this.rbOutlookSharedCal);
-            this.tabOutlook.Controls.Add(this.rbOutlookAltMB);
             this.tabOutlook.Controls.Add(this.ddMailboxName);
+            this.tabOutlook.Controls.Add(this.cbOnlyRespondedInvites);
+            this.tabOutlook.Controls.Add(this.rbOutlookAltMB);
             this.tabOutlook.Location = new System.Drawing.Point(79, 4);
             this.tabOutlook.Name = "tabOutlook";
             this.tabOutlook.Padding = new System.Windows.Forms.Padding(3);
@@ -505,16 +507,16 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.cbOutlookCalendars.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbOutlookCalendars.FormattingEnabled = true;
-            this.cbOutlookCalendars.Location = new System.Drawing.Point(112, 118);
+            this.cbOutlookCalendars.Location = new System.Drawing.Point(96, 118);
             this.cbOutlookCalendars.Name = "cbOutlookCalendars";
-            this.cbOutlookCalendars.Size = new System.Drawing.Size(272, 21);
+            this.cbOutlookCalendars.Size = new System.Drawing.Size(288, 21);
             this.cbOutlookCalendars.TabIndex = 24;
             this.cbOutlookCalendars.SelectedIndexChanged += new System.EventHandler(this.cbOutlookCalendar_SelectedIndexChanged);
             // 
             // lFilterCategories
             // 
             this.lFilterCategories.AutoSize = true;
-            this.lFilterCategories.Location = new System.Drawing.Point(20, 152);
+            this.lFilterCategories.Location = new System.Drawing.Point(11, 151);
             this.lFilterCategories.Name = "lFilterCategories";
             this.lFilterCategories.Size = new System.Drawing.Size(81, 13);
             this.lFilterCategories.TabIndex = 44;
@@ -527,9 +529,9 @@
             this.cbCategoryFilter.Items.AddRange(new object[] {
             "Exclude",
             "Include"});
-            this.cbCategoryFilter.Location = new System.Drawing.Point(112, 148);
+            this.cbCategoryFilter.Location = new System.Drawing.Point(96, 148);
             this.cbCategoryFilter.Name = "cbCategoryFilter";
-            this.cbCategoryFilter.Size = new System.Drawing.Size(79, 21);
+            this.cbCategoryFilter.Size = new System.Drawing.Size(105, 21);
             this.cbCategoryFilter.TabIndex = 43;
             this.cbCategoryFilter.SelectedIndexChanged += new System.EventHandler(this.cbCategoryFilter_SelectedIndexChanged);
             // 
@@ -546,9 +548,9 @@
             "Category2",
             "Category3",
             "Category4"});
-            this.clbCategories.Location = new System.Drawing.Point(197, 148);
+            this.clbCategories.Location = new System.Drawing.Point(207, 148);
             this.clbCategories.Name = "clbCategories";
-            this.clbCategories.Size = new System.Drawing.Size(187, 139);
+            this.clbCategories.Size = new System.Drawing.Size(177, 139);
             this.clbCategories.Sorted = true;
             this.clbCategories.TabIndex = 42;
             this.clbCategories.SelectedIndexChanged += new System.EventHandler(this.clbCategories_SelectedIndexChanged);
@@ -715,7 +717,7 @@
             // lOutlookCalendar
             // 
             this.lOutlookCalendar.AutoSize = true;
-            this.lOutlookCalendar.Location = new System.Drawing.Point(20, 122);
+            this.lOutlookCalendar.Location = new System.Drawing.Point(11, 121);
             this.lOutlookCalendar.Name = "lOutlookCalendar";
             this.lOutlookCalendar.Size = new System.Drawing.Size(81, 13);
             this.lOutlookCalendar.TabIndex = 25;
@@ -725,7 +727,7 @@
             // 
             this.rbOutlookDefaultMB.AutoSize = true;
             this.rbOutlookDefaultMB.Checked = true;
-            this.rbOutlookDefaultMB.Location = new System.Drawing.Point(20, 47);
+            this.rbOutlookDefaultMB.Location = new System.Drawing.Point(14, 46);
             this.rbOutlookDefaultMB.Name = "rbOutlookDefaultMB";
             this.rbOutlookDefaultMB.Size = new System.Drawing.Size(97, 17);
             this.rbOutlookDefaultMB.TabIndex = 18;
@@ -737,7 +739,7 @@
             // rbOutlookSharedCal
             // 
             this.rbOutlookSharedCal.AutoSize = true;
-            this.rbOutlookSharedCal.Location = new System.Drawing.Point(20, 93);
+            this.rbOutlookSharedCal.Location = new System.Drawing.Point(14, 93);
             this.rbOutlookSharedCal.Name = "rbOutlookSharedCal";
             this.rbOutlookSharedCal.Size = new System.Drawing.Size(104, 17);
             this.rbOutlookSharedCal.TabIndex = 19;
@@ -748,7 +750,7 @@
             // rbOutlookAltMB
             // 
             this.rbOutlookAltMB.AutoSize = true;
-            this.rbOutlookAltMB.Location = new System.Drawing.Point(20, 70);
+            this.rbOutlookAltMB.Location = new System.Drawing.Point(14, 69);
             this.rbOutlookAltMB.Name = "rbOutlookAltMB";
             this.rbOutlookAltMB.Size = new System.Drawing.Size(113, 17);
             this.rbOutlookAltMB.TabIndex = 17;
@@ -762,9 +764,9 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.ddMailboxName.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.ddMailboxName.FormattingEnabled = true;
-            this.ddMailboxName.Location = new System.Drawing.Point(134, 68);
+            this.ddMailboxName.Location = new System.Drawing.Point(126, 68);
             this.ddMailboxName.Name = "ddMailboxName";
-            this.ddMailboxName.Size = new System.Drawing.Size(250, 21);
+            this.ddMailboxName.Size = new System.Drawing.Size(258, 21);
             this.ddMailboxName.Sorted = true;
             this.ddMailboxName.TabIndex = 16;
             this.ddMailboxName.SelectedIndexChanged += new System.EventHandler(this.ddMailboxName_SelectedIndexChanged);
@@ -1246,7 +1248,7 @@
             this.dgObfuscateRegex.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Arial Black", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.ControlText;
             dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
             dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
@@ -1258,8 +1260,8 @@
             this.regexReplace});
             dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Window;
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Arial Black", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.ControlText;
             dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.InactiveBorder;
             dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.ControlText;
             dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
@@ -1340,7 +1342,7 @@
             this.tbInterval.ForeColor = System.Drawing.SystemColors.ControlText;
             this.tbInterval.Location = new System.Drawing.Point(74, 66);
             this.tbInterval.Maximum = new decimal(new int[] {
-            120,
+            121,
             0,
             0,
             0});
@@ -2193,7 +2195,7 @@
             this.tbTS4.Name = "tbTS4";
             this.tbTS4.Size = new System.Drawing.Size(158, 13);
             this.tbTS4.TabIndex = 53;
-            this.tbTS4.Text = "  - attach your OGcalsync.log file";
+            this.tbTS4.Text = "  - attach your ";
             // 
             // linkTShoot_issue
             // 
@@ -2774,6 +2776,17 @@
             this.trayIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("trayIcon.Icon")));
             this.trayIcon.Text = "Outlook Google Calendar Sync";
             // 
+            // cbOnlyRespondedInvites
+            // 
+            this.cbOnlyRespondedInvites.AutoSize = true;
+            this.cbOnlyRespondedInvites.Location = new System.Drawing.Point(14, 184);
+            this.cbOnlyRespondedInvites.Name = "cbOnlyRespondedInvites";
+            this.cbOnlyRespondedInvites.Size = new System.Drawing.Size(190, 17);
+            this.cbOnlyRespondedInvites.TabIndex = 45;
+            this.cbOnlyRespondedInvites.Text = "Only sync invites I\'ve responded to";
+            this.cbOnlyRespondedInvites.UseVisualStyleBackColor = true;
+            this.cbOnlyRespondedInvites.CheckedChanged += new System.EventHandler(this.cbOnlyRespondedInvites_CheckedChanged);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -3029,6 +3042,7 @@
         private System.Windows.Forms.CheckBox cbMuteClicks;
         public System.Windows.Forms.WebBrowser GappBrowser;
         public System.Windows.Forms.Label lLastSyncVal;
+        private System.Windows.Forms.CheckBox cbOnlyRespondedInvites;
         private System.Windows.Forms.TabPage tabDevOptions;
         private System.Windows.Forms.GroupBox gbAutoRetryErrors;
         private System.Windows.Forms.CheckBox cbEnableAutoRetry;

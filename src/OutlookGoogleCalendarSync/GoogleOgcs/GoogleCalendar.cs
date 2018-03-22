@@ -530,9 +530,10 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                         if (ev.Updated > ai.LastModificationTime)
                             return null;
                     } else {
-                        if (OutlookOgcs.Calendar.GetOGCSlastModified(ai).AddSeconds(5) >= ai.LastModificationTime)
-                            //Outlook last modified by OGCS
+                        if (OutlookOgcs.Calendar.GetOGCSlastModified(ai).AddSeconds(5) >= ai.LastModificationTime) {
+                            log.Fine("Outlook last modified by OGCS.");
                             return null;
+                        }
                         if (ev.Updated > ai.LastModificationTime)
                             return null;
                     }
@@ -1024,6 +1025,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
             log.Fine("Comparing Outlook GlobalID");
 
             String gCompareID;
+            String oCompareID;
             if (GetOGCSproperty(ev, MetadataId.oGlobalApptId, out gCompareID)) {
                 String oGlobalID = OutlookOgcs.Calendar.Instance.IOutlook.GetGlobalApptID(ai);
 
@@ -1048,7 +1050,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                         log.Fine("Comparing Outlook EntryID");
                         if (GetOGCSproperty(ev, MetadataId.oEntryId, out gCompareID) && gCompareID == OutlookOgcs.Calendar.GetOGCSEntryID(ai)) {
                             return true;
-                        } else if (!string.IsNullOrEmpty(gCompareID) && 
+                        } else if (!string.IsNullOrEmpty(gCompareID) &&
                             gCompareID.Remove(gCompareID.Length-16) == ai.EntryID.Remove(ai.EntryID.Length-16)) 
                         {
                             //Worse still, both a locally copied item AND a rescheduled appointment by someone else 
@@ -1079,6 +1081,23 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                             }
                         }
                     }
+
+                } else if (Settings.Instance.SyncDirection == Sync.Direction.Bidirectional &&
+                    oGlobalID.StartsWith(OutlookOgcs.Calendar.GlobalIdPattern) &&
+                    gCompareID.StartsWith(OutlookOgcs.Calendar.GlobalIdPattern) &&
+                    gCompareID.Substring(72) != oGlobalID.Substring(72) &&
+                    OutlookOgcs.Calendar.GetOGCSproperty(ai, OutlookOgcs.Calendar.MetadataId.gEventID, out oCompareID) &&
+                    oCompareID == ev.Id &&
+                    SignaturesMatch(signature(ev), OutlookOgcs.Calendar.signature(ai))) 
+                {
+                    //Apple iCloud completely recreates the GlobalID and zeros out the timestamp element! Issue #447.
+                    log.Warn("Appointment GlobalID has completely changed, but Google Event ID matches so relying on that!");
+                    log.Debug("Google's Event Id: " + ev.Id);
+                    log.Debug("Google's Outlook Global Id: " + gCompareID);
+                    log.Debug("Outlook's new Global Id: " + oGlobalID);
+                    AddOutlookIDs(ref ev, ai); //update GlobalID
+                    addOGCSproperty(ref ev, MetadataId.forceSave, "True");
+                    return true;
                 }
             } else {
                 if (Settings.Instance.MergeItems)
@@ -1278,7 +1297,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
         }
 
         public static Boolean SignaturesMatch(String sigEv, String sigAi) {
-            //Use simple matching on start,end,subject,location to pair events
+            //Use simple matching on start,end,subject to pair events
             if (Settings.Instance.Obfuscation.Enabled) {
                 if (Settings.Instance.Obfuscation.Direction.Id == Sync.Direction.OutlookToGoogle.Id)
                     sigAi = Obfuscate.ApplyRegex(sigAi, Sync.Direction.OutlookToGoogle);
@@ -1291,7 +1310,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
         public static void ExportToCSV(String action, String filename, List<Event> events) {
             if (!Settings.Instance.CreateCSVFiles) return;
 
-            log.Debug(action);
+            log.Debug("CSV export: " + action);
 
             TextWriter tw;
             try {
@@ -1324,7 +1343,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
             } finally {
                 if (tw != null) tw.Close();
             }
-            log.Debug("CSV export done.");
+            log.Fine("CSV export done.");
         }
         private static String exportToCSV(Event ev) {
             System.Text.StringBuilder csv = new System.Text.StringBuilder();

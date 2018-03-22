@@ -36,6 +36,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             }
         }
         public static Boolean OOMsecurityInfo = false;
+        private static List<String> alreadyRedirectedToWikiForComError = new List<String>();
         public const String GlobalIdPattern = "040000008200E00074C5B7101A82E008";
         public Sync.PushSyncTimer OgcsPushTimer;
         public MAPIFolder UseOutlookCalendar {
@@ -175,7 +176,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             return filtered;
         }
 
-        public List<AppointmentItem> FilterCalendarEntries(Items OutlookItems, Boolean filterCategories = true, Boolean noDateFilter = false, String extraFilter = "") {
+        public List<AppointmentItem> FilterCalendarEntries(Items OutlookItems, Boolean filterBySettings = true, Boolean noDateFilter = false, String extraFilter = "") {
             //Filtering info @ https://msdn.microsoft.com/en-us/library/cc513841%28v=office.12%29.aspx
 
             List<AppointmentItem> result = new List<AppointmentItem>();
@@ -201,6 +202,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                     "' AND [Start] < '" + max.ToString(Settings.Instance.OutlookDateFormat) + "'" + extraFilter;
                 log.Fine("Filter string: " + filter);
                 Int32 categoryFiltered = 0;
+                Int32 responseFiltered = 0;
                 foreach (Object obj in OutlookItems.Restrict(filter)) {
                     AppointmentItem ai;
                     try {
@@ -225,31 +227,36 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                         }
                         continue;
                     }
-                    if (filterCategories) {
+
+                    if (!filterBySettings) result.Add(ai);
+                    else {
+                        Boolean unfiltered = true;
+
                         String categoryDelimiter = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ListSeparator + " ";
                         if (Settings.Instance.CategoriesRestrictBy == Settings.RestrictBy.Include) {
-                            if (Settings.Instance.Categories.Count() > 0 && ((ai.Categories == null && Settings.Instance.Categories.Contains("<No category assigned>")) ||
-                                (ai.Categories != null && ai.Categories.Split(new[] { categoryDelimiter }, StringSplitOptions.None).Intersect(Settings.Instance.Categories).Count() > 0)))
-                            {
-                                result.Add(ai);
-                            } else categoryFiltered++;
+                            unfiltered = (Settings.Instance.Categories.Count() > 0 && ((ai.Categories == null && Settings.Instance.Categories.Contains("<No category assigned>")) ||
+                                (ai.Categories != null && ai.Categories.Split(new[] { categoryDelimiter }, StringSplitOptions.None).Intersect(Settings.Instance.Categories).Count() > 0)));
 
                         } else if (Settings.Instance.CategoriesRestrictBy == Settings.RestrictBy.Exclude) {
-                            if (Settings.Instance.Categories.Count() == 0 || (ai.Categories == null && !Settings.Instance.Categories.Contains("<No category assigned>")) ||
-                                (ai.Categories != null && ai.Categories.Split(new[] { categoryDelimiter }, StringSplitOptions.None).Intersect(Settings.Instance.Categories).Count() == 0))
-                            {
-                                result.Add(ai);
-                            } else categoryFiltered++;
+                            unfiltered = (Settings.Instance.Categories.Count() == 0 || (ai.Categories == null && !Settings.Instance.Categories.Contains("<No category assigned>")) ||
+                                (ai.Categories != null && ai.Categories.Split(new[] { categoryDelimiter }, StringSplitOptions.None).Intersect(Settings.Instance.Categories).Count() == 0));
                         }
-                    } else {
-                        result.Add(ai);
+                        if (!unfiltered) categoryFiltered++;
+
+                        if (Settings.Instance.OnlyRespondedInvites) {
+                            if (ai.ResponseStatus == OlResponseStatus.olResponseNotResponded) {
+                                unfiltered = false;
+                                responseFiltered++;
+                            }
+                        }
+                        if (unfiltered) result.Add(ai);
                     }
                 }
-                if (categoryFiltered > 0) {
-                    log.Info(categoryFiltered + " Outlook items excluded due to active category filter.");
-                    if (result.Count == 0)
-                        Forms.Main.Instance.Console.Update("Due to your category settings, all Outlook items have been filtered out!", Console.Markup.warning, notifyBubble: true);
-                }
+                if (categoryFiltered > 0) log.Info(categoryFiltered + " Outlook items excluded due to active category filter.");
+                if (responseFiltered > 0) log.Info(responseFiltered + " Outlook items excluded due to only syncing invites you responded to.");
+
+                if (result.Count == 0 && (categoryFiltered + responseFiltered > 0))
+                    Forms.Main.Instance.Console.Update("Due to your OGCS Outlook settings, all Outlook items have been filtered out!", Console.Markup.warning, notifyBubble: true);
             }
             log.Fine("Filtered down to " + result.Count);
             return result;
@@ -967,8 +974,11 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                 } else {
                     log.Error("COM Exception encountered.");
                     OGCSexception.Analyse(ex);
-                    System.Diagnostics.Process.Start("https://github.com/phw198/OutlookGoogleCalendarSync/wiki/FAQs---COM-Errors");
-                    throw new ApplicationException("COM error " + OGCSexception.GetErrorCode(ex) + " encountered.\r\n" +
+                    if (!alreadyRedirectedToWikiForComError.Contains(hResult)) {
+                        System.Diagnostics.Process.Start("https://github.com/phw198/OutlookGoogleCalendarSync/wiki/FAQs---COM-Errors");
+                        alreadyRedirectedToWikiForComError.Add(hResult);
+                    }
+                    throw new ApplicationException("COM error " + hResult + " encountered.\r\n" +
                         "Please check if there is a published solution on the OGCS wiki.");
                 }
 
@@ -979,7 +989,10 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                         "Please perform an Office Repair and then try running OGCS again.");
                 } else if (ex.Message.Contains("0x80040155")) {
                     log.Warn(ex.Message);
-                    System.Diagnostics.Process.Start("https://github.com/phw198/OutlookGoogleCalendarSync/wiki/FAQs---COM-Errors#0x80040155---interface-not-registered");
+                    if (!alreadyRedirectedToWikiForComError.Contains("0x80040155")) {
+                        System.Diagnostics.Process.Start("https://github.com/phw198/OutlookGoogleCalendarSync/wiki/FAQs---COM-Errors#0x80040155---interface-not-registered");
+                        alreadyRedirectedToWikiForComError.Add("0x80040155");
+                    }
                     throw new ApplicationException("A problem was encountered with your Office install.\r\n" +
                         "Please see the wiki for a solution.");
                 } else
@@ -1003,7 +1016,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         public static void ExportToCSV(String action, String filename, List<AppointmentItem> ais) {
             if (!Settings.Instance.CreateCSVFiles) return;
 
-            log.Debug(action);
+            log.Debug("CSV export: " + action);
 
             TextWriter tw;
             try {
@@ -1034,7 +1047,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             } finally {
                 if (tw != null) tw.Close();
             }
-            log.Debug("Done.");
+            log.Fine("CSV export done.");
         }
         private static string exportToCSV(AppointmentItem ai) {
             System.Text.StringBuilder csv = new System.Text.StringBuilder();
@@ -1169,7 +1182,10 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                     return true;
                 }
             } else {
-                log.Warn("Could not find Google event ID against Outlook appointment item.");
+                if (Settings.Instance.MergeItems)
+                    log.Fine("Could not find Google event ID against Outlook appointment item.");
+                else
+                    log.Warn("Could not find Google event ID against Outlook appointment item.");
             }
             return false;
         }

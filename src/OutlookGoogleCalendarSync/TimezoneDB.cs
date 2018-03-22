@@ -9,10 +9,13 @@ namespace OutlookGoogleCalendarSync {
         private static TimezoneDB instance;
         private static readonly ILog log = LogManager.GetLogger(typeof(NotificationTray));
         private TzdbDateTimeZoneSource source;
-        private String tzdbFilename = "tzdb.nzd";
+        private const String tzdbFilename = "tzdb.nzd";
+        private String tzdbFile {
+            get { return Path.Combine(Path.GetDirectoryName(System.Windows.Forms.Application.ExecutablePath), tzdbFilename); }
+        }
 
         public static TimezoneDB Instance {
-            get {   
+            get {
                 if (instance == null) instance = new TimezoneDB();
                 return instance;
             }
@@ -27,7 +30,7 @@ namespace OutlookGoogleCalendarSync {
         
         private TimezoneDB() {
             try {
-                using (Stream stream = File.OpenRead(tzdbFilename)) {
+                using (Stream stream = File.OpenRead(tzdbFile)) {
                     source = TzdbDateTimeZoneSource.FromStream(stream);
                 }
             } catch {
@@ -35,6 +38,13 @@ namespace OutlookGoogleCalendarSync {
                 source = TzdbDateTimeZoneSource.Default;
             }
             log.Info("Using NodaTime "+ source.VersionId);
+
+            Microsoft.Win32.SystemEvents.TimeChanged += SystemEvents_TimeChanged;
+        }
+
+        private static void SystemEvents_TimeChanged(object sender, EventArgs e) {
+            log.Info("Detected system timezone change.");
+            System.Globalization.CultureInfo.CurrentCulture.ClearCachedData();
         }
 
         public void CheckForUpdate() {
@@ -42,7 +52,7 @@ namespace OutlookGoogleCalendarSync {
             updateDBthread.Start();
         }        
         private void checkForUpdate(String localVersion) {
-            if (System.Diagnostics.Debugger.IsAttached && File.Exists(tzdbFilename)) return;
+            if (System.Diagnostics.Debugger.IsAttached && File.Exists(tzdbFile)) return;
 
             log.Debug("Checking for new timezone database...");
             String nodatimeURL = "http://nodatime.org/tzdb/latest.txt";
@@ -71,7 +81,7 @@ namespace OutlookGoogleCalendarSync {
                         if (string.Compare(localVersion, remoteVersion, System.StringComparison.InvariantCultureIgnoreCase) < 0) {
                             log.Debug("There is a new version " + remoteVersion);
                             try {
-                                wc.DownloadFile(html, tzdbFilename);
+                                wc.DownloadFile(html, tzdbFile);
                                 log.Debug("New TZDB version downloaded - disposing of reference to old db data.");
                                 instance = null;
                             } catch (System.Exception ex) {

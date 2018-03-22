@@ -78,7 +78,7 @@ namespace OutlookGoogleCalendarSync.Forms {
 
             //Settings
             ToolTips.SetToolTip(tbInterval,
-                "Set to zero to disable");
+                "Set to zero to disable automated syncs");
             ToolTips.SetToolTip(rbOutlookAltMB,
                 "Only choose this if you need to use an Outlook Calendar that is not in the default mailbox");
             ToolTips.SetToolTip(cbMergeItems,
@@ -199,6 +199,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                 refreshCategories();
             }
             #endregion
+            cbOnlyRespondedInvites.Checked = Settings.Instance.OnlyRespondedInvites;
             #region DateTime Format / Locale
             Dictionary<string, string> customDates = new Dictionary<string, string>();
             customDates.Add("Default", "g");
@@ -352,6 +353,7 @@ namespace OutlookGoogleCalendarSync.Forms {
             }
             updateGUIsettings_Proxy();
             #endregion
+            linkTShoot_logfile.Text = log4net.GlobalContext.Properties["LogFilename"] + " file";
             #region Dev Options
             cbEnableAutoRetry.Checked = Settings.Instance.EnableAutoRetry;
             tbNumberAttendees.Value = Settings.Instance.NumberAttendees;
@@ -374,7 +376,7 @@ namespace OutlookGoogleCalendarSync.Forms {
             dgAbout.Rows[r].Cells[1].Value = System.Windows.Forms.Application.ExecutablePath;
             dgAbout.Rows.Add(); r++;
             dgAbout.Rows[r].Cells[0].Value = "Config In";
-            dgAbout.Rows[r].Cells[1].Value = Program.SettingsFile;
+            dgAbout.Rows[r].Cells[1].Value = Settings.ConfigFile;
             dgAbout.Rows.Add(); r++;
             dgAbout.Rows[r].Cells[0].Value = "Subscription";
             dgAbout.Rows[r].Cells[1].Value = (Settings.Instance.Subscribed == DateTime.Parse("01-Jan-2000")) ? "N/A" : Settings.Instance.Subscribed.ToShortDateString();
@@ -914,6 +916,10 @@ namespace OutlookGoogleCalendarSync.Forms {
         }
         #endregion
 
+        private void cbOnlyRespondedInvites_CheckedChanged(object sender, EventArgs e) {
+            Settings.Instance.OnlyRespondedInvites = cbOnlyRespondedInvites.Checked;
+        }
+
         #region Datetime Format
         private void cbOutlookDateFormat_SelectedIndexChanged(object sender, EventArgs e) {
             KeyValuePair<string, string> selectedFormat = (KeyValuePair<string, string>)cbOutlookDateFormat.SelectedItem;
@@ -1224,7 +1230,17 @@ namespace OutlookGoogleCalendarSync.Forms {
         }
         #endregion
         #region When
-        public int MinSyncMinutes = System.Diagnostics.Debugger.IsAttached ? 1 : 10;
+        public int MinSyncMinutes {
+            get {
+                if (System.Diagnostics.Debugger.IsAttached) return 1;
+                else {
+                    if (Settings.Instance.OutlookPush && Settings.Instance.SyncDirection != Sync.Direction.GoogleToOutlook)
+                        return 120;
+                    else
+                        return 15;
+                }
+            }
+        }
 
         private void tbDaysInThePast_ValueChanged(object sender, EventArgs e) {
             Settings.Instance.DaysInThePast = (int)tbDaysInThePast.Value;
@@ -1241,12 +1257,24 @@ namespace OutlookGoogleCalendarSync.Forms {
         }
 
         private void tbMinuteOffsets_ValueChanged(object sender, EventArgs e) {
-            if ((int)tbInterval.Value > 0 && (int)tbInterval.Value < MinSyncMinutes && cbIntervalUnit.SelectedItem.ToString() == "Minutes") {
-                if (tbInterval.Value < Convert.ToInt16(tbInterval.Text))
-                    tbInterval.Value = 0;
-                else
-                    tbInterval.Value = MinSyncMinutes;
+            if (!Settings.Instance.UsingPersonalAPIkeys()) {
+                //Fair usage - most frequent sync interval is 2 hours when Push enabled
+                tbInterval.ValueChanged -= new System.EventHandler(this.tbMinuteOffsets_ValueChanged);
+                if (cbIntervalUnit.SelectedItem.ToString() == "Minutes") {
+                    if ((int)tbInterval.Value < MinSyncMinutes)
+                        tbInterval.Value = (tbInterval.Value < Convert.ToInt16(tbInterval.Text)) ? 0 : MinSyncMinutes;
+                    else if ((int)tbInterval.Value > 120) {
+                        tbInterval.Value = 3;
+                        cbIntervalUnit.Text = "Hours";
+                    }
+
+                } else if (cbIntervalUnit.SelectedItem.ToString() == "Hours") {
+                    if (((int)tbInterval.Value * 60) < MinSyncMinutes)
+                        tbInterval.Value = (tbInterval.Value < Convert.ToInt16(tbInterval.Text)) ? 0 : (MinSyncMinutes / 60);
+                }
+                tbInterval.ValueChanged += new System.EventHandler(this.tbMinuteOffsets_ValueChanged);
             }
+
             Settings.Instance.SyncInterval = (int)tbInterval.Value;
             Sync.Engine.Instance.OgcsTimer.SetNextSync();
             NotificationTray.UpdateAutoSyncItems();
@@ -1263,6 +1291,7 @@ namespace OutlookGoogleCalendarSync.Forms {
         private void cbOutlookPush_CheckedChanged(object sender, EventArgs e) {
             Settings.Instance.OutlookPush = cbOutlookPush.Checked;
             if (this.Visible) {
+                if (tbInterval.Value != 0) tbMinuteOffsets_ValueChanged(null, null);
                 if (cbOutlookPush.Checked) OutlookOgcs.Calendar.Instance.RegisterForPushSync();
                 else OutlookOgcs.Calendar.Instance.DeregisterForPushSync();
                 NotificationTray.UpdateAutoSyncItems();
@@ -1391,8 +1420,13 @@ namespace OutlookGoogleCalendarSync.Forms {
 
         private void cbPortable_CheckedChanged(object sender, EventArgs e) {
             if (this.Visible) {
-                Settings.Instance.Portable = cbPortable.Checked;
-                Program.MakePortable(cbPortable.Checked);
+                if (Program.StartedWithFileArgs)
+                    MessageBox.Show("It is not possible to change portability of OGCS when it is started with command line parameters.",
+                        "Cannot change portability", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                else {
+                    Settings.Instance.Portable = cbPortable.Checked;
+                    Program.MakePortable(cbPortable.Checked);
+                }
             }
         }
 
@@ -1544,22 +1578,27 @@ namespace OutlookGoogleCalendarSync.Forms {
 
         #region Social Media & Analytics
         public void CheckSyncMilestone() {
-            Boolean isMilestone = false;
-            Int32 syncs = Settings.Instance.CompletedSyncs;
-            String blurb = "You've completed " + String.Format("{0:n0}", syncs) + " syncs! Why not let people know how useful this tool is...";
+            try {
+                Boolean isMilestone = false;
+                Int32 syncs = Settings.Instance.CompletedSyncs;
+                String blurb = "You've completed " + String.Format("{0:n0}", syncs) + " syncs! Why not let people know how useful this tool is...";
 
-            lMilestone.Text = String.Format("{0:n0}", syncs) + " Syncs!";
-            lMilestoneBlurb.Text = blurb;
+                lMilestone.Text = String.Format("{0:n0}", syncs) + " Syncs!";
+                lMilestoneBlurb.Text = blurb;
 
-            switch (syncs) {
-                case 10: isMilestone = true; break;
-                case 100: isMilestone = true; break;
-                case 250: isMilestone = true; break;
-                case 1000: isMilestone = true; break;
-            }
-            if (isMilestone) {
-                if (CalMessageBox.Instance.ShowFalse(blurb, "Spread the Word", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation, DialogResult.OK))
-                    tabApp.SelectedTab = tabPage_Social;
+                switch (syncs) {
+                    case 10: isMilestone = true; break;
+                    case 100: isMilestone = true; break;
+                    case 250: isMilestone = true; break;
+                    case 1000: isMilestone = true; break;
+                }
+                if (isMilestone) {
+                    if (CalMessageBox.Instance.ShowFalse(blurb, "Spread the Word", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation, DialogResult.OK))
+                        tabApp.SelectedTab = tabPage_Social;
+                }
+            } catch (System.Exception ex) {
+                log.Warn("Failed checking sync milestone.");
+                OGCSexception.Analyse(ex);
             }
         }
 
