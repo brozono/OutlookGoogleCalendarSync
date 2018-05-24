@@ -41,7 +41,7 @@
     <WebPage>publish.htm</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
     <ApplicationRevision>1</ApplicationRevision>
-    <ApplicationVersion>2.7.3.1</ApplicationVersion>
+    <ApplicationVersion>2.7.4.1</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -175,7 +175,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extensions\ColourPicker.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Extensions\DateTime.cs" />
+    <Compile Include="GoogleOgcs\EventColour.cs" />
+    <Compile Include="OutlookOgcs\OutlookCategories.cs" />
     <Compile Include="Sync\AbortableBackgroundWorker.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -272,6 +277,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="OutlookGoogleCalendarSync_TemporaryKey.pfx" />
+    <None Include="Resources\expand.png" />
     <None Include="tzdb.nzd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
