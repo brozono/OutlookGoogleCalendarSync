@@ -238,6 +238,7 @@
             this.pbSocialTwitterFollow = new System.Windows.Forms.PictureBox();
             this.label2 = new System.Windows.Forms.Label();
             this.trayIcon = new System.Windows.Forms.NotifyIcon(this.components);
+            this.cbCloudLogging = new System.Windows.Forms.CheckBox();
             this.ddCategoryColour = new OutlookGoogleCalendarSync.Extensions.ColourPicker();
             this.cbLocation = new System.Windows.Forms.CheckBox();
             this.tabApp.SuspendLayout();
@@ -1761,6 +1762,7 @@
             // tabAppBehaviour
             // 
             this.tabAppBehaviour.BackColor = System.Drawing.Color.White;
+            this.tabAppBehaviour.Controls.Add(this.cbCloudLogging);
             this.tabAppBehaviour.Controls.Add(this.tbStartupDelay);
             this.tabAppBehaviour.Controls.Add(this.cbHideSplash);
             this.tabAppBehaviour.Controls.Add(this.cbMinimiseNotClose);
@@ -1850,7 +1852,7 @@
             this.gbProxy.Controls.Add(this.label5);
             this.gbProxy.Font = new System.Drawing.Font("Arial Black", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.gbProxy.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.gbProxy.Location = new System.Drawing.Point(16, 225);
+            this.gbProxy.Location = new System.Drawing.Point(16, 245);
             this.gbProxy.Name = "gbProxy";
             this.gbProxy.Size = new System.Drawing.Size(364, 200);
             this.gbProxy.TabIndex = 37;
@@ -2897,6 +2899,17 @@
             this.trayIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("trayIcon.Icon")));
             this.trayIcon.Text = "Outlook Google Calendar Sync";
             // 
+            // cbCloudLogging
+            // 
+            this.cbCloudLogging.Location = new System.Drawing.Point(16, 221);
+            this.cbCloudLogging.Name = "cbCloudLogging";
+            this.cbCloudLogging.Size = new System.Drawing.Size(215, 17);
+            this.cbCloudLogging.TabIndex = 42;
+            this.cbCloudLogging.Text = "Feedback errors to help improve OGCS";
+            this.cbCloudLogging.ThreeState = true;
+            this.cbCloudLogging.UseVisualStyleBackColor = true;
+            this.cbCloudLogging.CheckStateChanged += new System.EventHandler(this.cbCloudLogging_CheckStateChanged);
+            // 
             // ddCategoryColour
             // 
             this.ddCategoryColour.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
@@ -3194,6 +3207,7 @@
         public Extensions.ColourPicker ddCategoryColour;
         private System.Windows.Forms.Label lDonateTip;
         private System.Windows.Forms.CheckBox cbLocation;
+        public System.Windows.Forms.CheckBox cbCloudLogging;
         private System.Windows.Forms.TabPage tabDevOptions;
         private System.Windows.Forms.GroupBox gbAutoRetryErrors;
         private System.Windows.Forms.CheckBox cbEnableAutoRetry;
