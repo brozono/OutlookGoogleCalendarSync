@@ -41,7 +41,7 @@
     <WebPage>publish.htm</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
     <ApplicationRevision>1</ApplicationRevision>
-    <ApplicationVersion>2.7.5.1</ApplicationVersion>
+    <ApplicationVersion>2.7.6.1</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -72,7 +72,7 @@
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>06D0604CA0803462F6B6EF4690987DC5DFEB802A</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>D62544A58B92962A63E6F2A795DE9DB31A0492D3</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestKeyFile>OutlookGoogleCalendarSync_TemporaryKey.pfx</ManifestKeyFile>
@@ -271,7 +271,9 @@
       <DependentUpon>ErrorReporting.cs</DependentUpon>
     </Compile>
     <Compile Include="GoogleOgcs\ErrorReporting.cs" />
+    <Compile Include="GoogleOgcs\CustomProperty.cs" />
     <Compile Include="GoogleOgcs\EventColour.cs" />
+    <Compile Include="OutlookOgcs\CustomProperty.cs" />
     <Compile Include="OutlookOgcs\OutlookCategories.cs" />
     <Compile Include="Sync\AbortableBackgroundWorker.cs">
       <SubType>Component</SubType>
@@ -480,7 +482,13 @@
     <Content Include="Console\emoji\information_source.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Console\emoji\key.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Console\emoji\mag_right.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Console\emoji\reclaim.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Console\emoji\repeat.png">
