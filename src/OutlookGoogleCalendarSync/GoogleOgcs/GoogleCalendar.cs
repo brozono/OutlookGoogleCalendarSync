@@ -238,6 +238,11 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                 lr.ShowDeleted = false;
                 lr.SingleEvents = false;
 
+                if (!Settings.Instance.EnableUseRecurrence) {
+                    lr.SingleEvents = true;
+                    lr.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
+                }
+
                 int backoff = 0;
                 while (backoff < backoffLimit) {
                     try {
