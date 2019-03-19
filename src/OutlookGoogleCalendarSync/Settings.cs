@@ -58,6 +58,7 @@ namespace OutlookGoogleCalendarSync {
         private String version;
         private Boolean donor;
         private Boolean hideSplashScreen;
+        private Boolean suppressSocialPopup;
 
         public Settings() {
             setDefaults();
@@ -139,15 +140,18 @@ namespace OutlookGoogleCalendarSync {
             Subscribed = DateTime.Parse("01-Jan-2000");
             donor = true;
             hideSplashScreen = true;
+            suppressSocialPopup = true;
+
+            ExtirpateOgcsMetadata = false;
+
+            lastSyncDate = new DateTime(0);
+            completedSyncs = 0;
+            VerboseOutput = true;
 
             EnableAutoRetry = false;
             EnableAttendeeWarning = false;
             NumberAttendees = 200;
             EnableUseRecurrence = true;
-            
-            lastSyncDate = new DateTime(0);
-            completedSyncs = 0;
-            VerboseOutput = true;
         }
 
         public static Boolean InstanceInitialiased() {
@@ -285,6 +289,16 @@ namespace OutlookGoogleCalendarSync {
             }
         }
 
+        [DataMember] public bool SuppressSocialPopup {
+            get { return suppressSocialPopup; }
+            set {
+                if (!loading() && suppressSocialPopup != value) {
+                    XMLManager.ExportElement("SuppressSocialPopup", value, ConfigFile);
+                    if (Forms.Main.Instance != null) Forms.Main.Instance.cbSuppressSocialPopup.Checked = value;
+                }
+                suppressSocialPopup = value;
+            }
+        }
         [DataMember] public bool ShowBubbleTooltipWhenSyncing { get; set; }
         [DataMember] public bool StartOnStartup { get; set; }
         [DataMember] public Int32 StartupDelay { get; set; }
@@ -336,6 +350,9 @@ namespace OutlookGoogleCalendarSync {
                 if (!loading()) XMLManager.ExportElement("AlphaReleases", value, ConfigFile);
             }
         }
+        public Boolean UserIsBenefactor() {
+            return Subscribed != DateTime.Parse("01-Jan-2000") || donor;
+        }
         [DataMember] public DateTime Subscribed { get; set; }
         [DataMember] public Boolean Donor {
             get { return donor; }
@@ -344,6 +361,10 @@ namespace OutlookGoogleCalendarSync {
                 if (!loading()) XMLManager.ExportElement("Donor", value, ConfigFile);
             }
         }
+        #endregion
+        #region Advanced - Non GUI
+        [DataMember]
+        public Boolean ExtirpateOgcsMetadata { get; private set; }
         #endregion
 
         [DataMember] public DateTime LastSyncDate {
@@ -369,18 +390,14 @@ namespace OutlookGoogleCalendarSync {
             get { return isLoaded; }
         }
 
-        public static void Load(string XMLfile = null) {
+        public static void Load(String XMLfile = null) {
             try {
                 Settings.Instance = XMLManager.Import<Settings>(XMLfile ?? ConfigFile);
                 log.Fine("User settings loaded.");
                 Settings.isLoaded = true;
             } catch (ApplicationException ex) {
                 log.Error(ex.Message);
-                System.Windows.Forms.MessageBox.Show("Your OGCS settings appear to be corrupt and will have to be reset.",
-                    "Corrupt OGCS Settings", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
-                log.Warn("Resetting settings.xml file to defaults.");
-                System.IO.File.Delete(XMLfile ?? ConfigFile);
-                Settings.Instance.Save(XMLfile ?? ConfigFile);
+                ResetFile(XMLfile);
                 try {
                     Settings.Instance = XMLManager.Import<Settings>(XMLfile ?? ConfigFile);
                     log.Debug("User settings loaded successfully this time.");
@@ -391,7 +408,15 @@ namespace OutlookGoogleCalendarSync {
             }
         }
 
-        public void Save(string XMLfile = null) {
+        public static void ResetFile(String XMLfile = null) {
+            System.Windows.Forms.MessageBox.Show("Your OGCS settings appear to be corrupt and will have to be reset.",
+                    "Corrupt OGCS Settings", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
+            log.Warn("Resetting settings.xml file to defaults.");
+            System.IO.File.Delete(XMLfile ?? ConfigFile);
+            Settings.Instance.Save(XMLfile ?? ConfigFile);
+        }
+
+        public void Save(String XMLfile = null) {
             log.Info("Saving settings.");
             XMLManager.Export(this, XMLfile ?? ConfigFile);
         }
@@ -487,7 +512,8 @@ namespace OutlookGoogleCalendarSync {
             log.Info("APPLICATION BEHAVIOUR:-");
             log.Info("  ShowBubbleTooltipWhenSyncing: " + ShowBubbleTooltipWhenSyncing);
             log.Info("  StartOnStartup: " + StartOnStartup + "; DelayedStartup: "+ StartupDelay.ToString());
-            log.Info("  HideSplashScreen: " + ((Subscribed != DateTime.Parse("01-Jan-2000") || Donor) ? HideSplashScreen.ToString() : "N/A"));
+            log.Info("  HideSplashScreen: " + (UserIsBenefactor() ? HideSplashScreen.ToString() : "N/A"));
+            log.Info("  SuppressSocialPopup: " + (UserIsBenefactor() ? SuppressSocialPopup.ToString() : "N/A"));
             log.Info("  StartInTray: " + StartInTray);
             log.Info("  MinimiseToTray: " + MinimiseToTray);
             log.Info("  MinimiseNotClose: " + MinimiseNotClose);

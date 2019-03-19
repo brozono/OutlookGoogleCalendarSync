@@ -35,18 +35,12 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                 outlookVersionFull = oApp.Version;
 
                 log.Info("Outlook Version: " + outlookVersionFull);
-
-                // Disable Unreachable code detected warning
-                #pragma warning disable 0162
-
                 if (testing2003) {
+                    #pragma warning disable 162 //Unreachable code
                     log.Info("*** 2003 TESTING ***");
                     outlookVersionFull = "11";
+                    #pragma warning restore 162
                 }
-
-                // Restore Unreachable code detected warning
-                #pragma warning restore 0162
-
                 outlookVersion = Convert.ToInt16(outlookVersionFull.Split(Convert.ToChar("."))[0]);
 
             } finally {

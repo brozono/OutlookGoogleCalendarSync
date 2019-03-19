@@ -13,7 +13,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Josh Stubbs")]
 [assembly: AssemblyProduct("Outlook Google Calendar Sync")]
-[assembly: AssemblyCopyright("Copyright 2018")]
+[assembly: AssemblyCopyright("Copyright 2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -28,6 +28,6 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can use the default the Revision and 
 // Build Numbers by using the '*' as shown below:
 [assembly: AssemblyVersion("2.7.*")]
-[assembly: AssemblyFileVersion("2.7.7.2")]
+[assembly: AssemblyFileVersion("2.7.8.1")]
 
 [assembly: AssemblyMetadata("SquirrelAwareVersion", "1")]
