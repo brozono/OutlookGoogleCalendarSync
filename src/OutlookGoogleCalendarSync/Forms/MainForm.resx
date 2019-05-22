@@ -149,7 +149,7 @@ For helping to troubleshoot a problem, CSVs of your meetings being synchronised 
 If you need to access Google through a proxy, you can also provide the details here, or just rely on using Internet Explorers configuration (which is the default).</value>
   </data>
   <data name="lAboutMain.Text" xml:space="preserve">
-    <value>Project forked by Josh Stubbs (2015-2018)
+    <value>Project forked by Josh Stubbs (2015-2019)
 A continuation of a project forked by Paul Woolcock (2014-20xx)
 A continuation of initial efforts by Zissis Siantidis (2012-2013)
 

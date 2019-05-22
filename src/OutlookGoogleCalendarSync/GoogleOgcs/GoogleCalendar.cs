@@ -28,7 +28,10 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                         instance.Authenticator.OgcsUserStatus();
                     else {
                         instance = null;
-                        throw new ApplicationException("Google handshake failed.");
+                        if (Forms.Main.Instance.Console.DocumentText.Contains("Authorisation to allow OGCS to manage your Google calendar was cancelled."))
+                            throw new OperationCanceledException();
+                        else
+                            throw new ApplicationException("Google handshake failed.");
                     }
                 }
                 return instance;
@@ -755,8 +758,10 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                     }
                 }
             } else {
-                if (Sync.Engine.CompareAttribute("Reminder Default", Sync.Direction.OutlookToGoogle, ev.Reminders.UseDefault.ToString(), Settings.Instance.UseGoogleDefaultReminder.ToString(), sb, ref itemModified))
-                    ev.Reminders.UseDefault = Settings.Instance.UseGoogleDefaultReminder;
+                if (ev.Reminders.Overrides == null) {
+                    if (Sync.Engine.CompareAttribute("Reminder Default", Sync.Direction.OutlookToGoogle, ev.Reminders.UseDefault.ToString(), Settings.Instance.UseGoogleDefaultReminder.ToString(), sb, ref itemModified))
+                        ev.Reminders.UseDefault = Settings.Instance.UseGoogleDefaultReminder;
+                }
             }
 
             if (itemModified > 0) {
@@ -1114,8 +1119,11 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                                 log.Fine("This appointment was copied by the user. Incorrect match avoided.");
                                 return false;
                             } else {
-                                if (ai.Organizer != OutlookOgcs.Calendar.Instance.IOutlook.CurrentUserName()) {
-                                    log.Fine("Organiser changed time of appointment.");
+                                if (Settings.Instance.OutlookGalBlocked || ai.Organizer != OutlookOgcs.Calendar.Instance.IOutlook.CurrentUserName()) {
+                                    if (Settings.Instance.OutlookGalBlocked)
+                                        log.Warn("It looks like the organiser changed time of appointment, but due to GAL policy we can't check who they are.");
+                                    else
+                                        log.Fine("Organiser changed time of appointment.");
                                     CustomProperty.AddOutlookIDs(ref ev, ai); //update EntryID
                                     CustomProperty.Add(ref ev, CustomProperty.MetadataId.forceSave, "True");
                                     return true;

@@ -133,7 +133,7 @@ namespace OutlookGoogleCalendarSync.Forms {
             cbMuteClicks.Checked = Settings.Instance.MuteClickSounds;
             #region Outlook box
             #region Mailbox
-            if (OutlookOgcs.Factory.is2003()) {
+            if (OutlookOgcs.Factory.Is2003()) {
                 rbOutlookDefaultMB.Checked = true;
                 rbOutlookAltMB.Enabled = false;
                 rbOutlookSharedCal.Enabled = false;
@@ -563,7 +563,8 @@ namespace OutlookGoogleCalendarSync.Forms {
                     note =  "  Your annual subscription for guaranteed quota   " + cr +
                             "  for Google calendar usage is expiring on " + expiration.ToString("dd-MMM") + "." + cr +
                             "         Click to renew for just £1/month.        ";
-                    url = urlStub + "OGCS Premium renewal from " + expiration.ToString("dd-MMM-yy") + " for " + Settings.Instance.GaccountEmail;
+                    url = urlStub + "OGCS Premium renewal from " + expiration.ToString("dd-MMM-yy", new System.Globalization.CultureInfo("en-US")) + 
+                        " for " + Settings.Instance.GaccountEmail;
                     break;
                 case SyncNotes.SubscriptionExpired:
                     expiration = (DateTime)extraData;
@@ -604,18 +605,6 @@ namespace OutlookGoogleCalendarSync.Forms {
         #region EVENTS
         #region Form actions
         /// <summary>
-        /// Navigates up the parents of a control to the first TabControl control
-        /// </summary>
-        private static Control findFocusedTab(Control control) {
-            Control parentControl = control.Parent as Control;
-            while (parentControl != null && !(control is TabControl)) {
-                control = control.Parent;
-                parentControl = control.Parent;
-            }
-            return control;
-        }
-
-        /// <summary>
         /// Detect when F1 is pressed for help
         /// </summary>
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData) {
@@ -624,13 +613,8 @@ namespace OutlookGoogleCalendarSync.Forms {
                     try {
                         log.Fine("Active control: " + this.ActiveControl.ToString());
 
-                        Control focusedTab = null;
                         Control focusedPage = null;
-
-                        focusedTab = findFocusedTab(this.ActiveControl);
-
-                        if (focusedTab is TabControl)
-                            focusedPage = (focusedTab as TabControl).SelectedTab;
+                        focusedPage = Forms.Main.Instance.tabApp.SelectedTab;
 
                         if (focusedPage == null) {
                             System.Diagnostics.Process.Start("https://phw198.github.io/OutlookGoogleCalendarSync/guide");
@@ -784,8 +768,8 @@ namespace OutlookGoogleCalendarSync.Forms {
                     }
                 } else {
                     if (tbSyncNote.Tag.ToString().Contains("OGCS Premium renewal")) {
-                        MessageBox.Show("Please ensure you don't already have an active recurring annual payment set up in PayPal :-)", "Recurring payment already configured?",
-                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show("Before renewing, please ensure you don't already have an active recurring annual payment set up in PayPal :-)", 
+                            "Recurring payment already configured?", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                     System.Diagnostics.Process.Start(tbSyncNote.Tag.ToString());
                 }
@@ -1004,8 +988,8 @@ namespace OutlookGoogleCalendarSync.Forms {
                 return;
             }
 
+            log.Debug("Retrieving Google calendar list.");
             this.bGetGoogleCalendars.Text = "Cancel retrieval";
-            cbGoogleCalendars.Enabled = false;
             List<GoogleCalendarListEntry> calendars = null;
             try {
                 calendars = GoogleOgcs.Calendar.Instance.GetCalendars();
@@ -1013,6 +997,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                 OGCSexception.AnalyseAggregate(agex, false);
             } catch (Google.Apis.Auth.OAuth2.Responses.TokenResponseException ex) {
                 OGCSexception.AnalyseTokenResponse(ex, false);
+            } catch (OperationCanceledException) {
             } catch (System.Exception ex) {
                 OGCSexception.Analyse(ex);
                 MessageBox.Show("Failed to retrieve Google calendars.\r\n" +
@@ -1166,7 +1151,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                 if (tbTargetCalendar.Items.Contains("target calendar"))
                     tbTargetCalendar.Items.Remove("target calendar");
                 tbTargetCalendar.SelectedIndex = 0;
-                tbTargetCalendar.Enabled = cbPrivate.Checked || cbAvailable.Checked;
+                tbTargetCalendar.Enabled = cbPrivate.Checked || cbAvailable.Checked || cbColour.Checked;
             } else {
                 cbObfuscateDirection.Enabled = false;
                 cbObfuscateDirection.SelectedIndex = Settings.Instance.SyncDirection.Id - 1;
