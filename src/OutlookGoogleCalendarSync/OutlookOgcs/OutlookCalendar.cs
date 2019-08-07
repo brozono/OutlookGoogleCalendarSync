@@ -19,8 +19,8 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         /// <summary>
         /// Whether instance of OutlookCalendar class should connect to Outlook application
         /// </summary>
-        public static Boolean InstanceConnect = true;
-        public static Boolean IsInstanceNull { get { return instance == null; } }
+        public static Boolean InstanceConnect { get; private set; }
+
         public static Calendar Instance {
             get {
                 try {
@@ -28,8 +28,8 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                         instance = new Calendar();
                         instance.IOutlook.Connect();
                     }
-                } catch (System.ApplicationException ex) {
-                    throw ex;
+                } catch (System.ApplicationException) {
+                    throw;
                 } catch (System.Exception ex) {
                     OGCSexception.Analyse(ex);
                     log.Info("It appears Outlook has been restarted after OGCS was started. Reconnecting...");
@@ -64,6 +64,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         public EphemeralProperties EphemeralProperties = new EphemeralProperties();
 
         public Calendar() {
+            InstanceConnect = true;
             IOutlook = Factory.GetOutlookInterface();
         }
 
@@ -77,10 +78,19 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         /// <summary>
         /// Wrapper for IOutlook.Disconnect - cannot dereference fully inside interface
         /// </summary>
-        public void Disconnect(Boolean onlyWhenNoGUI = false) {
-            Instance.IOutlook.Disconnect(onlyWhenNoGUI);
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+        public static void Disconnect(Boolean onlyWhenNoGUI = false) {
+            if (instance == null) return;
+
+            try {
+                InstanceConnect = false;
+                Instance.IOutlook.Disconnect(onlyWhenNoGUI);
+            } catch (System.Exception ex) {
+                OGCSexception.Analyse("Could not disconnect from Outlook.", OGCSexception.LogAsFail(ex));
+            } finally {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                InstanceConnect = true;
+            }
         }
 
         /// <summary>
@@ -97,7 +107,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                     log.Warn(ex.Message);
                     try { OutlookOgcs.Calendar.Instance.Reset(); } catch { }
                     ex.Data.Add("OGCS", "Failed to access the Outlook calendar. Please try again.");
-                    throw ex;
+                    throw;
                 }
             } catch (System.Runtime.InteropServices.COMException ex) {
                 log.Warn(ex.Message);
@@ -109,11 +119,16 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                     log.Warn(ex.Message);
                     OutlookOgcs.Calendar.Instance.Reset();
                     filtered = FilterCalendarEntries(Instance.UseOutlookCalendar.Items, suppressAdvisories: suppressAdvisories);
-                } else throw ex;
+                } else throw;
 
-            } catch (System.Exception ex) {
+            } catch (System.ArgumentNullException ex) {
+                OGCSexception.Analyse("It seems that Outlook has just been closed.", OGCSexception.LogAsFail(ex));
+                OutlookOgcs.Calendar.Instance.Reset();
+                filtered = FilterCalendarEntries(Instance.UseOutlookCalendar.Items, suppressAdvisories: suppressAdvisories);
+
+            } catch (System.Exception) {
                 if (!suppressAdvisories) Forms.Main.Instance.Console.Update("Unable to access the Outlook calendar.", Console.Markup.error);
-                throw ex;
+                throw;
             }
             return filtered;
         }
@@ -743,9 +758,9 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                             }
                         }
                     }
-                } catch (System.Exception ex) {
+                } catch (System.Exception) {
                     Forms.Main.Instance.Console.Update("Failure processing Outlook item:-<br/>" + OutlookOgcs.Calendar.GetEventSummary(ai), Console.Markup.warning);
-                    throw ex;
+                    throw;
                 }
             }
             log.Debug(unclaimedAi.Count + " unclaimed.");
@@ -924,7 +939,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                         }
                         System.Threading.Thread.Sleep(10000);
                     } else {
-                        throw aex;
+                        throw;
                     }
                 }
                 openAttempts++;
@@ -990,8 +1005,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                         "Both must be running in Standard or Administrator mode.");
 
                 } else if (!comErrorInWiki(ex)) {
-                    log.Error("COM Exception encountered.");
-                    OGCSexception.Analyse(ex);
+                    OGCSexception.Analyse("COM error not in wiki.", ex);
                     if (!alreadyRedirectedToWikiForComError.Contains(hResult)) {
                         System.Diagnostics.Process.Start("https://github.com/phw198/OutlookGoogleCalendarSync/wiki/FAQs---COM-Errors");
                         alreadyRedirectedToWikiForComError.Add(hResult);
@@ -1001,7 +1015,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                 }
 
             } catch (System.InvalidCastException ex) {
-                if (!comErrorInWiki(ex)) throw ex;
+                if (!comErrorInWiki(ex)) throw;
 
             } catch (System.UnauthorizedAccessException ex) {
                 if (OGCSexception.GetErrorCode(ex) == "0x80070005") { // E_ACCESSDENIED
@@ -1016,35 +1030,55 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                 //System.Type oAppType = System.Type.GetTypeFromProgID("Outlook.Application");
                 //ApplicationClass oAppClass = System.Activator.CreateInstance(oAppType) as ApplicationClass;
                 //oApp = oAppClass.CreateObject("Outlook.Application") as Microsoft.Office.Interop.Outlook.Application;
-                throw ex;
+                throw;
             }
         }
 
         private static Boolean comErrorInWiki(System.Exception ex) {
             String hResult = OGCSexception.GetErrorCode(ex);
             String wikiUrl = "";
-
-            try {
-                String html = "";
+            System.Text.RegularExpressions.Regex rgx;
+            
+            if (hResult == "0x80004002" && (ex is System.InvalidCastException || ex is System.Runtime.InteropServices.COMException)) {
+                log.Warn(ex.Message);
+                log.Debug("Extracting specific COM error code from Exception error message.");
                 try {
-                    html = new System.Net.WebClient().DownloadString("https://github.com/phw198/OutlookGoogleCalendarSync/wiki/FAQs---COM-Errors");
-                } catch (System.Exception) {
-                    log.Fail("Could not download wiki HTML.");
-                    throw;
-                }
-                if (!string.IsNullOrEmpty(html)) {
-                    html = html.Replace("\n", "");
-                    System.Text.RegularExpressions.Regex rgx = new System.Text.RegularExpressions.Regex(@"<h2><a.*?href=\""(#"+ hResult +".*?)\"", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                    System.Text.RegularExpressions.MatchCollection sourceAnchors = rgx.Matches(html);
-                    if (sourceAnchors.Count == 0) {
-                        log.Debug("Could you not find the COM error " + hResult + " in the wiki.");
+                    rgx = new System.Text.RegularExpressions.Regex(@"HRESULT: (0x[\dA-F]{8})", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    System.Text.RegularExpressions.MatchCollection matches = rgx.Matches(ex.Message);
+                    if (matches.Count == 0) {
+                        log.Error("Could not regex HRESULT out of the error message");
+                        hResult = "";
                     } else {
-                        wikiUrl = "https://github.com/phw198/OutlookGoogleCalendarSync/wiki/FAQs---COM-Errors" + sourceAnchors[0].Groups[1].Value;
+                        hResult = matches[0].Groups[1].Value;
                     }
+                } catch (System.Exception ex2) {
+                    OGCSexception.Analyse("Parsing error message with regex failed.", ex2);
                 }
+            }
+            
+            if (!string.IsNullOrEmpty(hResult)) {
+                try {
+                    String html = "";
+                    try {
+                        html = new System.Net.WebClient().DownloadString("https://github.com/phw198/OutlookGoogleCalendarSync/wiki/FAQs---COM-Errors");
+                    } catch (System.Exception) {
+                        log.Fail("Could not download wiki HTML.");
+                        throw;
+                    }
+                    if (!string.IsNullOrEmpty(html)) {
+                        html = html.Replace("\n", "");
+                        rgx = new System.Text.RegularExpressions.Regex(@"<h2><a.*?href=\""(#" + hResult + ".*?)\"", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                        System.Text.RegularExpressions.MatchCollection sourceAnchors = rgx.Matches(html);
+                        if (sourceAnchors.Count == 0) {
+                            log.Debug("Could not find the COM error " + hResult + " in the wiki.");
+                        } else {
+                            wikiUrl = "https://github.com/phw198/OutlookGoogleCalendarSync/wiki/FAQs---COM-Errors" + sourceAnchors[0].Groups[1].Value;
+                        }
+                    }
 
-            } catch (System.Exception htmlEx) {
-                OGCSexception.Analyse("Could not parse Wiki for existance of COM error.", htmlEx);
+                } catch (System.Exception htmlEx) {
+                    OGCSexception.Analyse("Could not parse Wiki for existance of COM error.", htmlEx);
+                }
             }
 
             if (string.IsNullOrEmpty(wikiUrl)) {

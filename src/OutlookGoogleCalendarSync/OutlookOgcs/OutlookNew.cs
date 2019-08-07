@@ -98,7 +98,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                     log.Warn(ex.Message);
                     throw new ApplicationException("A problem was encountered with your Office install.\r\n" +
                             "Please perform an Office Repair or reinstall Outlook and then try running OGCS again.");
-                } else throw ex;
+                } else throw;
 
             } finally {
                 // Done. Log off.
@@ -108,7 +108,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
         }
         public void Disconnect(Boolean onlyWhenNoGUI = false) {
             if (!onlyWhenNoGUI ||
-                (onlyWhenNoGUI && oApp.Explorers.Count == 0)) 
+                (onlyWhenNoGUI && (oApp == null || oApp.Explorers.Count == 0)))
             {
                 log.Debug("De-referencing all Outlook application objects.");
                 try {
@@ -127,7 +127,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                 }
 
                 log.Info("Disconnecting from Outlook application.");
-                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(oApp);
+                if (oApp != null) System.Runtime.InteropServices.Marshal.FinalReleaseComObject(oApp);
                 oApp = null;
                 GC.Collect();
             }
@@ -371,7 +371,7 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                 Forms.Main.Instance.lOutlookCalendar.Text = "Select calendar";
             } catch (System.Exception ex) {
                 OGCSexception.Analyse(ex, true);
-                throw ex;
+                throw;
             }
         }
 
@@ -400,16 +400,15 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
                         findCalendars(folder.Folders, calendarFolders, excludeDeletedFolder, defaultCalendar);
                     }
                 } catch (System.Exception ex) {
-                    OGCSexception.Analyse(ex);
                     if (oApp.Session.ExchangeConnectionMode.ToString().Contains("Disconnected") ||
-                        ex.Message.StartsWith("Network problems are preventing connection to Microsoft Exchange.") ||
+                        OGCSexception.GetErrorCode(ex) == "0xC204011D" || ex.Message.StartsWith("Network problems are preventing connection to Microsoft Exchange.") ||
                         OGCSexception.GetErrorCode(ex, 0x000FFFFF) == "0x00040115") {
+                        log.Warn(ex.Message);
                         log.Info("Currently disconnected from Exchange - unable to retrieve MAPI folders.");
                         Forms.Main.Instance.ToolTips.SetToolTip(Forms.Main.Instance.cbOutlookCalendars,
                             "The Outlook calendar to synchonize with.\nSome may not be listed as you are currently disconnected.");
                     } else {
-                        log.Error("Failed to recurse MAPI folders.");
-                        log.Error(ex.Message);
+                        OGCSexception.Analyse("Failed to recurse MAPI folders.", ex);
                         MessageBox.Show("A problem was encountered when searching for Outlook calendar folders.",
                             "Calendar Folders", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
@@ -678,10 +677,14 @@ namespace OutlookGoogleCalendarSync.OutlookOgcs {
             }
             
             NodaTime.TimeZones.TzdbDateTimeZoneSource tzDBsource = TimezoneDB.Instance.Source;
-            TimeZoneInfo tzi = TimeZoneInfo.FindSystemTimeZoneById(oTZ_id);
-            String tzID = tzDBsource.MapTimeZoneId(tzi);
-            log.Fine("Timezone \"" + oTZ_name + "\" mapped to \"" + tzDBsource.CanonicalIdMap[tzID] + "\"");
-            return tzDBsource.CanonicalIdMap[tzID];
+            String retVal = null;
+            if (!tzDBsource.WindowsMapping.PrimaryMapping.TryGetValue(oTZ_id, out retVal) || retVal == null)
+                log.Fail("Could not find mapping for \"" + oTZ_name + "\"");
+            else {
+                retVal = tzDBsource.CanonicalIdMap[retVal];
+                log.Fine("Timezone \"" + oTZ_name + "\" mapped to \"" + retVal + "\"");
+            }
+            return retVal;
         }
 
         public void WindowsTimeZone_get(AppointmentItem ai, out String startTz, out String endTz) {

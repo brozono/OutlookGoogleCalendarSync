@@ -62,6 +62,7 @@ namespace OutlookGoogleCalendarSync {
         private DateTime subscribed;
         private Boolean hideSplashScreen;
         private Boolean suppressSocialPopup;
+        private bool? cloudLogging;
 
         public Settings() {
             setDefaults();
@@ -135,6 +136,7 @@ namespace OutlookGoogleCalendarSync {
 
             CreateCSVFiles = false;
             LoggingLevel = "DEBUG";
+            cloudLogging = null;
             portable = false;
             Proxy = new SettingsProxy();
 
@@ -317,12 +319,12 @@ namespace OutlookGoogleCalendarSync {
 
         [DataMember] public bool CreateCSVFiles { get; set; }
         [DataMember] public String LoggingLevel { get; set; }
-        private bool? cloudLogging;
         [DataMember] public bool? CloudLogging {
             get { return cloudLogging; }
             set {
                 cloudLogging = value;
                 GoogleOgcs.ErrorReporting.SetThreshold(value ?? false);
+                if (!loading()) XMLManager.ExportElement("CloudLogging", value, ConfigFile);
             }
         }
         //Proxy
@@ -455,7 +457,7 @@ namespace OutlookGoogleCalendarSync {
             log.Info("  GAL Blocked: " + OutlookGalBlocked);
             
             log.Info("GOOGLE SETTINGS:-");
-            log.Info("  Calendar: " + UseGoogleCalendar.Name);
+            log.Info("  Calendar: " + (UseGoogleCalendar == null ? "" : UseGoogleCalendar.ToString()));
             log.Info("  Personal API Keys: " + UsingPersonalAPIkeys());
             log.Info("    Client Identifier: " + PersonalClientIdentifier);
             log.Info("    Client Secret: " + (PersonalClientSecret.Length < 5

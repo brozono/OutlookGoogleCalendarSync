@@ -323,6 +323,10 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                 try {
                     createdEvent = createCalendarEntry_save(newEvent, ai);
                 } catch (System.Exception ex) {
+                    if (ex.Message.Contains("You need to have writer access to this calendar")) {
+                        Forms.Main.Instance.Console.Update("The Google calendar being synced with must not be read-only.<br/>Cannot continue sync.", Console.Markup.fail, newLine: false);
+                        return;
+                    }
                     Forms.Main.Instance.Console.UpdateWithError(OutlookOgcs.Calendar.GetEventSummary(ai, true) + "New event failed to save.", ex);
                     OGCSexception.Analyse(ex, true);
                     if (CalMessageBox.Instance.ShowTrue("New Google event failed to save. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
@@ -367,7 +371,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                     if (OGCSexception.GetErrorCode(ex) == "0x80004004") {
                         Forms.Main.Instance.Console.Update("You do not have the rights to programmatically access Outlook appointment descriptions.<br/>" +
                             "It may be best to stop syncing the Description attribute.", Console.Markup.warning);
-                    } else throw ex;
+                    } else throw;
                 }
             }
             if (Settings.Instance.AddLocation)
@@ -388,7 +392,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                             "more than " + Settings.Instance.NumberAttendees + ", which settings does not allow.", Console.Markup.warning);
                 } else {
                     foreach (Microsoft.Office.Interop.Outlook.Recipient recipient in ai.Recipients) {
-                        Google.Apis.Calendar.v3.Data.EventAttendee ea = GoogleOgcs.Calendar.CreateAttendee(recipient);
+                        Google.Apis.Calendar.v3.Data.EventAttendee ea = GoogleOgcs.Calendar.CreateAttendee(recipient, ai.Organizer == recipient.Name);
                         ev.Attendees.Add(ea);
                     }
                 }
@@ -422,7 +426,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
 
         private Event createCalendarEntry_save(Event ev, AppointmentItem ai) {
             if (Settings.Instance.SyncDirection == Sync.Direction.Bidirectional) {
-                log.Debug("Saving timestamp when OGCS updated event.");
+                log.Debug("Saving timestamp when OGCS created event.");
                 CustomProperty.SetOGCSlastModified(ref ev);
             }
             if (Settings.Instance.APIlimit_inEffect) {
@@ -496,6 +500,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                         continue;
                     } else {
                         Forms.Main.Instance.Console.UpdateWithError(OutlookOgcs.Calendar.GetEventSummary(compare.Key, true) + "Event update failed.", ex);
+                        if (ex is System.Runtime.InteropServices.COMException) throw;
                         OGCSexception.Analyse(ex, true);
                         if (CalMessageBox.Instance.ShowTrue("Google event update failed. Continue with synchronisation?", "Sync item failed", MessageBoxButtons.YesNo, MessageBoxIcon.Question, DialogResult.Yes))
                             continue;
@@ -983,7 +988,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
 
             //Order by start date (same as Outlook) for quickest matching
             google.Sort((x, y) => (x.Start.DateTimeRaw ?? x.Start.Date).CompareTo((y.Start.DateTimeRaw ?? y.Start.Date)));
-
+            
             // Count backwards so that we can remove found items without affecting the order of remaining items
             int metadataEnhanced = 0;
             for (int g = google.Count - 1; g >= 0; g--) {
@@ -997,7 +1002,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
 
                     for (int o = outlook.Count - 1; o >= 0; o--) {
                         try {
-                            log.UltraFine("Checking " + OutlookOgcs.Calendar.GetEventSummary(outlook[o]));
+                            if (log.IsUltraFineEnabled()) log.UltraFine("Checking " + OutlookOgcs.Calendar.GetEventSummary(outlook[o]));
 
                             String compare_oID;
                             if (outlookIDmissing && compare_gEntryID.StartsWith("040000008200E00074C5B7101A82E008")) {
@@ -1027,7 +1032,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                                 break;
                             }
                         } catch (System.Exception ex) {
-                            if (!log.IsFineEnabled()) {
+                            if (!log.IsUltraFineEnabled()) {
                                 try {
                                     log.Info(OutlookOgcs.Calendar.GetEventSummary(outlook[o]));
                                 } catch { }
@@ -1197,6 +1202,15 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                             }
 
                             //Response
+                            if (ai.Organizer == attendee.DisplayName) {
+                                if (Sync.Engine.CompareAttribute("Organiser " + attendeeIdentifier + " - Response Status",
+                                    Sync.Direction.OutlookToGoogle,
+                                    attendee.ResponseStatus, "accepted", sb, ref itemModified)) {
+                                    log.Fine("Forcing the organiser to have accepted the 'invite' in Google");
+                                    attendee.ResponseStatus = "accepted";
+                                }
+                                break;
+                            }
                             switch (recipient.MeetingResponseStatus) {
                                 case OlResponseStatus.olResponseNone:
                                     if (Sync.Engine.CompareAttribute("Attendee " + attendeeIdentifier + " - Response Status",
@@ -1234,7 +1248,7 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
                         log.Fine("Attendee added: " + recipient.Name);
                         sb.AppendLine("Attendee added: " + recipient.Name);
                         if (ev.Attendees == null) ev.Attendees = new List<Google.Apis.Calendar.v3.Data.EventAttendee>();
-                        ev.Attendees.Add(GoogleOgcs.Calendar.CreateAttendee(recipient));
+                        ev.Attendees.Add(GoogleOgcs.Calendar.CreateAttendee(recipient, ai.Organizer == recipient.Name));
                         itemModified++;
                     }
                 }
@@ -1538,13 +1552,17 @@ namespace OutlookGoogleCalendarSync.GoogleOgcs {
             return eventSummary;
         }
 
-        public static Google.Apis.Calendar.v3.Data.EventAttendee CreateAttendee(Recipient recipient) {
+        public static Google.Apis.Calendar.v3.Data.EventAttendee CreateAttendee(Recipient recipient, Boolean isOrganiser) {
             GoogleOgcs.EventAttendee ea = new GoogleOgcs.EventAttendee();
             log.Fine("Creating attendee " + recipient.Name);
             ea.DisplayName = recipient.Name;
             ea.Email = OutlookOgcs.Calendar.Instance.IOutlook.GetRecipientEmail(recipient);
             ea.Optional = (recipient.Type == (int)OlMeetingRecipientType.olOptional);
-            //Readonly: ea.Organizer = (ai.Organizer == recipient.Name);
+            if (isOrganiser) {
+                //ea.Organizer = true; This is read-only. The best we can do is force them to have accepted the "invite"
+                ea.ResponseStatus = "accepted";
+                return ea;
+            }
             switch (recipient.MeetingResponseStatus) {
                 case OlResponseStatus.olResponseNone: ea.ResponseStatus = "needsAction"; break;
                 case OlResponseStatus.olResponseAccepted: ea.ResponseStatus = "accepted"; break;

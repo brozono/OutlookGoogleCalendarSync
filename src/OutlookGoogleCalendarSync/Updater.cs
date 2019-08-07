@@ -30,7 +30,7 @@ namespace OutlookGoogleCalendarSync {
         /// </summary>
         /// <param name="updateButton">The button that triggered this, if manually called.</param>
         public async void CheckForUpdate(Button updateButton = null) {
-            if (string.IsNullOrEmpty(nonGitHubReleaseUri) && System.Diagnostics.Debugger.IsAttached) return;
+            if (string.IsNullOrEmpty(nonGitHubReleaseUri) && Program.InDeveloperMode) return;
 
             bt = updateButton;
             log.Debug((isManualCheck ? "Manual" : "Automatic") + " update check requested.");
@@ -215,16 +215,16 @@ namespace OutlookGoogleCalendarSync {
 
             } catch (ApplicationException ex) {
                 Telemetry.Send(Analytics.Category.squirrel, Analytics.Action.download, ex.Data["analyticsLabel"] + ";failed");
-                throw ex;
+                throw;
             } catch (System.AggregateException ae) {
                 log.Fail("Failed checking for update.");
                 foreach (System.Exception ex in ae.InnerExceptions) {
                     OGCSexception.Analyse(OGCSexception.LogAsFail(ex), true);
-                    throw ex;
+                    throw;
                 }
             } catch (System.Exception ex) {
                 OGCSexception.Analyse("Failed checking for update.", OGCSexception.LogAsFail(ex), true);
-                throw ex;
+                throw;
             } finally {
                 isBusy = false;
                 updateManager.Dispose();
@@ -307,7 +307,7 @@ namespace OutlookGoogleCalendarSync {
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes) {
                     log.Debug("User opted to give feedback.");
                     Telemetry.Send(Analytics.Category.squirrel, Analytics.Action.uninstall, Application.ProductVersion + "-feedback");
-                    System.Diagnostics.Process.Start("https://docs.google.com/forms/d/e/1FAIpQLSfRWYFdgyfbFJBMQ0dz14patu195KSKxdLj8lpWvLtZn-GArw/viewform");
+                    System.Diagnostics.Process.Start("https://docs.google.com/forms/d/e/1FAIpQLSfRWYFdgyfbFJBMQ0dz14patu195KSKxdLj8lpWvLtZn-GArw/viewform?entry.1161230174=v" + Application.ProductVersion);
                 } else {
                     log.Debug("User opted not to give feedback.");
                 }

@@ -27,7 +27,7 @@ namespace OutlookGoogleCalendarSync {
                 Program.MyFineLevel, message, exception);
         }
         public static void Fine(this ILog log, string message) {
-            log.Fine(message, exception:null);
+            log.Fine(message, exception: null);
         }
         public static void Fine(this ILog log, string message, String containsEmail) {
             if (Settings.Instance.LoggingLevel != "ULTRA-FINE" && !string.IsNullOrEmpty(containsEmail)) {
@@ -47,6 +47,9 @@ namespace OutlookGoogleCalendarSync {
         }
         public static void UltraFine(this ILog log, string message) {
             log.UltraFine(message, null);
+        }
+        public static Boolean IsUltraFineEnabled(this ILog log) {
+            return log.Logger.IsEnabledFor(Program.MyUltraFineLevel);
         }
         #endregion
 
@@ -88,7 +91,7 @@ namespace OutlookGoogleCalendarSync {
             }
 
             //Cloud logging value not set yet - let's ask the user
-            Forms.ErrorReporting frm = new Forms.ErrorReporting();
+            Forms.ErrorReporting frm = Forms.ErrorReporting.Instance;
             DialogResult dr = frm.ShowDialog();
             if (dr == DialogResult.Cancel) {
                 errorOccurred = false;
@@ -96,7 +99,6 @@ namespace OutlookGoogleCalendarSync {
             }
             Boolean confirmative = dr == DialogResult.Yes;
             if (Settings.IsLoaded) Settings.Instance.CloudLogging = confirmative;
-            else XMLManager.ExportElement("CloudLogging", confirmative, Settings.ConfigFile);
             Telemetry.Send(Analytics.Category.ogcs, Analytics.Action.setting, "CloudLogging=" + confirmative.ToString());
 
             try {
